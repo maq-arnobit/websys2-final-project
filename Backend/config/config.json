@@ -1,11 +1,11 @@
 {
-  "development": {
-    "username": "root",
-    "password": null,
-    "database": "legal",
-    "host": "127.0.0.1",
-    "dialect": "mysql",
-    "port": 3307
+ "development": {
+    "username": "postgres.fexgenuaqawdslabpifp",
+    "password": "Password67!",
+    "database": "postgres",
+    "host": "aws-1-ap-southeast-2.pooler.supabase.com",
+    "dialect": "postgres",
+    "port": 5432
   },
   "test": {
     "username": "root",
