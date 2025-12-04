@@ -20,10 +20,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'order_id',
         as: 'shipment'
       });
-      this.hasOne(models.Transaction, {
-        foreignKey: 'order_id',
-        as: 'transaction'
-      });
     }
   }
   
@@ -63,6 +59,15 @@ module.exports = (sequelize, DataTypes) => {
     paymentStatus: {
       type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'),
       defaultValue: 'pending'
+    },
+    paymentMethod: {
+      type: DataTypes.STRING  
+    },
+    paymentDate: {
+      type: DataTypes.DATE
+    },
+    transactionReference: {
+      type: DataTypes.STRING  
     }
   }, {
     sequelize,
