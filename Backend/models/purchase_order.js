@@ -20,10 +20,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'substance_id',
         as: 'substance'
       });
-      this.hasOne(models.Transaction, {
-        foreignKey: 'purchaseOrder_id',
-        as: 'transaction'
-      });
     }
   }
   
@@ -74,6 +70,12 @@ module.exports = (sequelize, DataTypes) => {
     paymentStatus: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
+    },
+    paymentMethod: {
+      type: DataTypes.STRING
+    },
+    paymentDate: {
+      type: DataTypes.DATE
     }
   }, {
     sequelize,
