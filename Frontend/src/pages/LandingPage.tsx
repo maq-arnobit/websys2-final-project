@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Lock, Eye, TrendingUp, Zap, Terminal } from 'lucide-react';
 
 const LandingPage = () => {
-  const [glitchText, setGlitchText] = useState('SECURE PORTAL');
+  const [glitchText, setGlitchText] = useState('Totally Legal Substances');
   const [typedText, setTypedText] = useState('');
-  const fullText = '> Initializing secure connection...';
+  const fullText = '> typing message here...';
 
   useEffect(() => {
     let index = 0;
@@ -36,12 +36,17 @@ const LandingPage = () => {
           50% { opacity: 0.8; }
         }
         @keyframes glitch {
-          0% { transform: translate(0); }
-          20% { transform: translate(-2px, 2px); }
-          40% { transform: translate(-2px, -2px); }
-          60% { transform: translate(2px, 2px); }
-          80% { transform: translate(2px, -2px); }
-          100% { transform: translate(0); }
+          0% { transform: translate(0) rotate(0deg) scale(1); }
+          10% { transform: translate(-10px, 5px) rotate(-2deg) scale(1.02); }
+          20% { transform: translate(8px, -8px) rotate(2deg) scale(0.98); }
+          30% { transform: translate(-8px, -5px) rotate(-1deg) scale(1.01); }
+          40% { transform: translate(10px, 8px) rotate(3deg) scale(0.99); }
+          50% { transform: translate(-5px, 10px) rotate(-2deg) scale(1.02); }
+          60% { transform: translate(8px, -10px) rotate(1deg) scale(0.98); }
+          70% { transform: translate(-10px, 5px) rotate(-3deg) scale(1.01); }
+          80% { transform: translate(5px, -8px) rotate(2deg) scale(0.99); }
+          90% { transform: translate(-8px, 8px) rotate(-1deg) scale(1.01); }
+          100% { transform: translate(0) rotate(0deg) scale(1); }
         }
         .terminal-border {
           border: 2px solid #0f0;
@@ -60,7 +65,11 @@ const LandingPage = () => {
           animation: flicker 0.15s infinite;
         }
         .glitch:hover {
-          animation: glitch 0.3s infinite;
+          animation: glitch 0.2s infinite;
+          text-shadow: 
+            -2px 0 #ff00ff,
+            2px 0 #00ffff,
+            0 0 5px rgba(0, 255, 0, 0.5);
         }
         .cursor::after {
           content: '▋';
@@ -73,22 +82,15 @@ const LandingPage = () => {
       `}</style>
 
       <div className="scanline min-h-screen">
-        {/* Header */}
         <header className="border-b-2 border-green-500 bg-black p-4">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-green-500 font-bold text-xl terminal-glow">
-                [SYSTEM_PORTAL]
+                [TotallyLegalSubstances]
               </span>
             </div>
             <nav className="flex gap-4">
-              <a href="#features" className="text-gray-400 hover:text-green-500 transition-colors">
-                FEATURES
-              </a>
-              <a href="#about" className="text-gray-400 hover:text-green-500 transition-colors">
-                ABOUT
-              </a>
               <a href="/login" className="border-2 border-green-500 px-4 py-1 text-green-500 hover:bg-green-500 hover:bg-opacity-20 transition-all">
                 LOGIN
               </a>
@@ -96,7 +98,6 @@ const LandingPage = () => {
           </div>
         </header>
 
-        {/* Hero Section */}
         <section className="max-w-7xl mx-auto px-4 py-20">
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold mb-6 text-green-500 terminal-glow glitch">
@@ -112,92 +113,10 @@ const LandingPage = () => {
               >
                 &gt; ACCESS_SYSTEM
               </a>
-              <button className="border-2 border-gray-700 bg-black px-8 py-4 text-gray-400 font-bold text-lg hover:border-green-500 hover:text-green-500 transition-all">
-                &gt; LEARN_MORE
-              </button>
-            </div>
-          </div>
-
-          {/* Terminal Window */}
-          <div className="terminal-border bg-black p-6 max-w-3xl mx-auto mt-16">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-800">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-gray-600 ml-2">terminal@system:~$</span>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="text-green-500">&gt; status --check</div>
-              <div className="text-gray-400 ml-4">✓ Encryption active</div>
-              <div className="text-gray-400 ml-4">✓ Connection secure</div>
-              <div className="text-gray-400 ml-4">✓ System operational</div>
-              <div className="text-green-500 mt-4">&gt; access --request</div>
-              <div className="text-gray-400 ml-4">Awaiting credentials...</div>
             </div>
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section id="features" className="max-w-7xl mx-auto px-4 py-20">
-          <h2 className="text-3xl font-bold text-center mb-12 text-green-500 terminal-glow">
-            [SYSTEM_FEATURES]
-          </h2>
-          <div className="grid grid-cols-3 gap-6">
-            {features.map((feature, idx) => (
-              <div
-                key={idx}
-                className="terminal-border bg-black p-6 hover:bg-gray-900 transition-all group"
-              >
-                <div className="text-green-500 mb-4 group-hover:scale-110 transition-transform">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-white">{feature.title}</h3>
-                <p className="text-gray-400 text-sm">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="max-w-7xl mx-auto px-4 py-20">
-          <div className="terminal-border bg-black p-12">
-            <div className="grid grid-cols-4 gap-8">
-              {[
-                { label: 'Active Users', value: '12,847' },
-                { label: 'Transactions', value: '2.4M' },
-                { label: 'Uptime', value: '99.9%' },
-                { label: 'Countries', value: '180+' },
-              ].map((stat, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="text-4xl font-bold text-green-500 terminal-glow mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-400 uppercase">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="max-w-7xl mx-auto px-4 py-20">
-          <div className="terminal-border bg-black p-12 text-center">
-            <h2 className="text-3xl font-bold mb-4 text-green-500 terminal-glow">
-              READY TO ACCESS?
-            </h2>
-            <p className="text-gray-400 mb-8">
-              Join thousands of users operating on the most secure platform.
-            </p>
-            <a 
-              href="/login"
-              className="terminal-border bg-black px-12 py-4 text-green-500 font-bold text-lg hover:bg-green-500 hover:bg-opacity-10 transition-all inline-block"
-            >
-              &gt; INITIALIZE_SESSION
-            </a>
-          </div>
-        </section>
-
-        {/* Footer */}
         <footer className="border-t-2 border-green-500 bg-black p-8 mt-20">
           <div className="max-w-7xl mx-auto text-center">
             <div className="flex justify-center gap-2 items-center mb-4">
@@ -205,7 +124,7 @@ const LandingPage = () => {
               <span className="text-green-500 text-sm">SYSTEM ONLINE</span>
             </div>
             <p className="text-gray-600 text-xs">
-              © 2025 SECURE_PORTAL.SYS // ALL TRANSMISSIONS ENCRYPTED
+              © 2025 footer text here // footer text here
             </p>
           </div>
         </footer>
