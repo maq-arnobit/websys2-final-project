@@ -1,4 +1,4 @@
-// src/controllers/customer.controller.ts
+//customer controller
 import { Response } from 'express';
 import { AuthRequest } from '../auth/auth-middleware';
 import { hashPassword } from '../auth/auth-middleware';
