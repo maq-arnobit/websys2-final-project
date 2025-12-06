@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev":"nodemon",
-    "build": "tsc",
+    "build": "tsc && ls -la dist && ls -la dist/models",
     "start": "node dist/src/index.js"
   },
   "keywords": [],
