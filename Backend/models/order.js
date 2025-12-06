@@ -66,9 +66,6 @@ module.exports = (sequelize, DataTypes) => {
     paymentDate: {
       type: DataTypes.DATE
     },
-    transactionReference: {
-      type: DataTypes.STRING  
-    }
   }, {
     sequelize,
     modelName: 'Order',
