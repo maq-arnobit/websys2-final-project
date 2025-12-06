@@ -70,6 +70,14 @@ module.exports = {
       paymentStatus: {
         type: Sequelize.BOOLEAN,
         defaultValue: false
+      },
+      paymentMethod: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      paymentDate: {
+        type: Sequelize.DATE,
+        allowNull: false
       }
     });
   },
