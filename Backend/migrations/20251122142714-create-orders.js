@@ -50,6 +50,14 @@ module.exports = {
       paymentStatus: {
         type: Sequelize.ENUM('pending', 'paid', 'failed', 'refunded'),
         defaultValue: 'pending'
+      },
+      paymentMethod: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      paymentDate: {
+        type: Sequelize.DATE,
+        allowNull: false
       }
     });
   },
