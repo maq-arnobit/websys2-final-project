@@ -23,9 +23,24 @@ export class PurchaseOrdersController {
             }
         }
 
+        const transport = await db.ProviderTransport.findByPk(providerTransport_id);
+        
+        if (!transport) {
+            return res.status(404).json({ message: 'Transport option not found' });
+        }
+
+        if (transport.provider_id !== provider_id) {
+            return res.status(400).json({ 
+                message: 'Transport option does not belong to the specified provider' 
+            });
+        }
+
         const parsedQuantity = parseFloat(quantityOrdered);
         const parsedUnitCost = parseFloat(unitCost);
-        const totalCost = Math.round(parsedQuantity * parsedUnitCost * 100) / 100;
+        
+        const subtotal = parsedQuantity * parsedUnitCost;
+        const transportCost = parseFloat(transport.transportCost);
+        const totalCost = Math.round((subtotal + transportCost) * 100) / 100;
 
         const purchaseOrder = await db.PurchaseOrder.create({
             dealer_id: req.user.id,
@@ -34,6 +49,7 @@ export class PurchaseOrdersController {
             providerTransport_id,
             quantityOrdered: parsedQuantity,
             unitCost: parsedUnitCost,
+            transportCost: transportCost,  
             totalCost,
             paymentMethod,
             paymentDate: new Date(),

@@ -1,5 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth-middleware';
+import { getImageUrl } from '../file-upload/upload-middleware';
+import { deleteImageById } from '../file-upload/upload-middleware';
 const db = require('../../models');
 
 export class InventoryController {
@@ -92,34 +94,46 @@ export class InventoryController {
   };
 
   static getAll = async (req: AuthRequest, res: Response) => {
-    try {
-      const inventory = await db.Inventory.findAll({
-        include: [{
-          model: db.Substance,
-          as: 'substance',
-          include: [{ 
-            model: db.Provider, 
-            as: 'provider', 
-            attributes: { exclude: ['password'] } 
-          }]
-        },
-        {
-          model: db.Dealer,
-          as: 'dealer',
-          attributes: { exclude: ['password'] }
+  try {
+    const inventory = await db.Inventory.findAll({
+      include: [{
+        model: db.Substance,
+        as: 'substance',
+        include: [{ 
+          model: db.Provider, 
+          as: 'provider', 
+          attributes: { exclude: ['password'] } 
         }]
-      });
+      },
+      {
+        model: db.Dealer,
+        as: 'dealer',
+        attributes: { exclude: ['password'] }
+      }]
+    });
 
-      return res.status(200).json({ inventory });
-    } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching inventory', 
-        error: error.message 
-      });
-    }
-  };
+    const inventoryWithImages = inventory.map((item: any) => {
+      const itemData = item.toJSON();
+      return {
+        ...itemData,
+        image_url: getImageUrl('inventory', item.inventory_id),
+        substance: {
+          ...itemData.substance,
+          image_url: getImageUrl('substance', item.substance_id)
+        }
+      };
+    });
 
-  static getById = async (req: AuthRequest, res: Response) => {
+    return res.status(200).json({ inventory: inventoryWithImages });
+  } catch (error: any) {
+    return res.status(500).json({ 
+      message: 'Error fetching inventory', 
+      error: error.message 
+    });
+  }
+};
+
+    static getById = async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -144,7 +158,17 @@ export class InventoryController {
         return res.status(404).json({ message: 'Inventory item not found' });
       }
 
-      return res.status(200).json({ inventory });
+      const inventoryData = inventory.toJSON();
+      const inventoryWithImage = {
+        ...inventoryData,
+        image_url: getImageUrl('inventory', inventory.inventory_id),
+        substance: {
+          ...inventoryData.substance,
+          image_url: getImageUrl('substance', inventory.substance_id)
+        }
+      };
+
+      return res.status(200).json({ inventory: inventoryWithImage });
     } catch (error: any) {
       return res.status(500).json({ 
         message: 'Error fetching inventory item', 
@@ -206,6 +230,8 @@ export class InventoryController {
       if (req.user?.type === 'dealer' && inventory.dealer_id !== req.user.id) {
         return res.status(403).json({ message: 'Cannot delete other dealers inventory' });
       }
+
+      deleteImageById('inventory', parseInt(id));
 
       await inventory.destroy();
 
