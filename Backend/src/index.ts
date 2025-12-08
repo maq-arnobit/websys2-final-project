@@ -4,7 +4,7 @@ import cors from 'cors';
 import routes from './routes/routes';
 
 const app = express();
-const PORT = process.env.PORT || 4200;
+const PORT = Number(process.env.PORT) || 4200;
 
 app.use(cookieParser());
 app.use(cors({
