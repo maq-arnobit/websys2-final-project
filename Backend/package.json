@@ -7,9 +7,10 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "test": "jest --coverage",
-    "start": "nodemon",
-    "build": "tsc"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev":"nodemon",
+    "build": "tsc && cp -r models dist/ && cp -r config dist/ && cp -r migrations dist/ && cp -r seeders dist/",
+    "start": "node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
