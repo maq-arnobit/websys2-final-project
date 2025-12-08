@@ -4,7 +4,6 @@ import cors from 'cors';
 import routes from './routes/routes';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 4200;
 
 app.use(cookieParser());
 app.use(cors({
@@ -20,8 +19,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', routes);
 
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running at http://0.0.0.0/${PORT}`);
-});
 
 export default app;
+
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+}
