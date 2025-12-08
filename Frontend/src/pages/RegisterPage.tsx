@@ -1,36 +1,63 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, User, Lock, Shield, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { authService } from '../services/authService';
+import { Eye, EyeOff, User, Lock, Mail, Shield, AlertTriangle, Building } from 'lucide-react';
 
-type AccessType = 'customer' | 'dealer' | 'provider';
-
-const LoginPage = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [accessType, setAccessType] = useState<AccessType>('customer');
+export default function RegisterPage() {
+  const [userType, setUserType] = useState<'customer' | 'dealer' | 'provider'>('customer');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    email: '',
+    businessName: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
-    setIsLoading(true);
+    setLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
-      if (username && password) {
-        // Navigate to dashboard (you'll implement this with React Router)
-        console.log('Login successful', { username, accessType });
-        // window.location.href = '/dashboard';
-      } else {
-        setError('AUTHENTICATION_FAILED: Invalid credentials');
+    try {
+      const registrationData: any = {
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+      };
+
+      if (userType === 'provider') {
+        if (!formData.businessName) {
+          setError('REGISTRATION_FAILED: Business name required for providers');
+          setLoading(false);
+          return;
+        }
+        registrationData.businessName = formData.businessName;
       }
-      setIsLoading(false);
-    }, 1500);
+
+      const response = await authService.register(userType, registrationData);
+      console.log('Registration successful:', response);
+      navigate('/login');
+    } catch (err: any) {
+      setError(`REGISTRATION_FAILED: ${err.message}`);
+      console.error('Registration error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
-      handleLogin();
+    if (e.key === 'Enter' && !loading) {
+      handleSubmit();
     }
   };
 
@@ -84,24 +111,24 @@ const LoginPage = () => {
 
       <div className="scanline w-full max-w-md">
         {/* Back Link */}
-        <a 
-          href="/"
+        <button 
+          onClick={() => navigate('/')}
           className="text-gray-400 hover:text-green-500 transition-colors mb-6 inline-block"
         >
           &lt; BACK_TO_MAIN
-        </a>
+        </button>
 
-        {/* Login Container */}
+        {/* Register Container */}
         <div className="terminal-border bg-black p-8 relative overflow-hidden">
           {/* Scanning Line Effect */}
-          {isLoading && <div className="scanning-line"></div>}
+          {loading && <div className="scanning-line"></div>}
 
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-green-500 font-bold terminal-glow">
-                AUTH_SYSTEM
+                REGISTRATION_SYSTEM
               </span>
             </div>
             <Shield size={24} className="text-green-500" />
@@ -109,10 +136,10 @@ const LoginPage = () => {
 
           {/* Title */}
           <h1 className="text-2xl font-bold mb-2 text-green-500 terminal-glow">
-            &gt; ACCESS_REQUIRED
+            &gt; CREATE_NEW_ACCOUNT
           </h1>
           <p className="text-sm text-gray-400 mb-6">
-            Enter credentials to establish secure connection
+            Initialize new user credentials in the system
           </p>
 
           {/* Error Message */}
@@ -126,16 +153,21 @@ const LoginPage = () => {
           {/* Access Type Selection */}
           <div className="mb-6">
             <label className="text-xs text-gray-400 mb-2 block uppercase">
-              [ACCESS_LEVEL]
+              [ACCOUNT_TYPE]
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {(['customer', 'dealer', 'provider'] as AccessType[]).map((type) => (
+              {(['customer', 'dealer', 'provider'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setAccessType(type)}
+                  onClick={() => {
+                    setUserType(type);
+                    if (type !== 'provider') {
+                      setFormData({ ...formData, businessName: '' });
+                    }
+                  }}
                   className={`p-2 border-2 transition-all text-sm font-bold ${
-                    accessType === type
+                    userType === type
                       ? 'border-green-500 bg-green-500 bg-opacity-20 text-green-500'
                       : 'border-gray-700 text-gray-500 hover:border-green-500 hover:text-green-500'
                   }`}
@@ -146,8 +178,8 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Login Form */}
-          <div className="space-y-4">
+          {/* Registration Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username */}
             <div>
               <label className="text-xs text-gray-400 mb-2 block uppercase">
@@ -157,12 +189,35 @@ const LoginPage = () => {
                 <User size={18} className="absolute left-3 top-3 text-gray-600" />
                 <input
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
                   onKeyPress={handleKeyPress}
                   placeholder="Enter username"
                   className="w-full bg-black border-2 border-gray-700 p-2 pl-10 text-green-500 placeholder-gray-700 focus:border-green-500 focus:outline-none transition-colors font-mono"
-                  disabled={isLoading}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="text-xs text-gray-400 mb-2 block uppercase">
+                [EMAIL]
+              </label>
+              <div className="relative">
+                <Mail size={18} className="absolute left-3 top-3 text-gray-600" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter email address"
+                  className="w-full bg-black border-2 border-gray-700 p-2 pl-10 text-green-500 placeholder-gray-700 focus:border-green-500 focus:outline-none transition-colors font-mono"
+                  disabled={loading}
+                  required
                 />
               </div>
             </div>
@@ -176,12 +231,14 @@ const LoginPage = () => {
                 <Lock size={18} className="absolute left-3 top-3 text-gray-600" />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   onKeyPress={handleKeyPress}
                   placeholder="Enter password"
                   className="w-full bg-black border-2 border-gray-700 p-2 pl-10 pr-10 text-green-500 placeholder-gray-700 focus:border-green-500 focus:outline-none transition-colors font-mono"
-                  disabled={isLoading}
+                  disabled={loading}
+                  required
                 />
                 <button
                   type="button"
@@ -193,59 +250,71 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* Remember & Forgot */}
-            <div className="flex justify-between items-center text-xs">
-              <label className="flex items-center gap-2 text-gray-400 cursor-pointer hover:text-green-500 transition-colors">
-                <input type="checkbox" className="w-3 h-3" />
-                REMEMBER_SESSION
+            {/* Business Name (Provider only) */}
+            {userType === 'provider' && (
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block uppercase">
+                  [BUSINESS_NAME]
+                </label>
+                <div className="relative">
+                  <Building size={18} className="absolute left-3 top-3 text-gray-600" />
+                  <input
+                    type="text"
+                    name="businessName"
+                    value={formData.businessName}
+                    onChange={handleChange}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Enter business name"
+                    className="w-full bg-black border-2 border-gray-700 p-2 pl-10 text-green-500 placeholder-gray-700 focus:border-green-500 focus:outline-none transition-colors font-mono"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* <div className="flex items-start gap-2 text-xs">
+              <input type="checkbox" className="w-3 h-3 mt-1" required />
+              <label className="text-gray-400">
+                I agree to the{' '}
+                <a href="#" className="text-green-500 hover:underline">
+                  TERMS_OF_SERVICE
+                </a>
+                {' '}and{' '}
+                <a href="#" className="text-green-500 hover:underline">
+                  PRIVACY_POLICY
+                </a>
               </label>
-              <a href="#" className="text-gray-400 hover:text-green-500 transition-colors">
-                RECOVER_ACCESS?
-              </a>
-            </div>
+            </div> */}
 
             {/* Submit Button */}
             <button
-              type="button"
-              onClick={handleLogin}
-              disabled={isLoading}
+              type="submit"
+              disabled={loading}
               className="w-full terminal-border bg-black p-3 text-green-500 font-bold hover:bg-green-500 hover:bg-opacity-10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? '&gt; AUTHENTICATING...' : '&gt; ESTABLISH_CONNECTION'}
+              {loading ? '&gt; CREATING_ACCOUNT...' : '&gt; INITIALIZE_ACCOUNT'}
             </button>
-          </div>
+          </form>
 
-          {/* Register Link */}
+          {/* Login Link */}
           <div className="mt-6 pt-6 border-t border-gray-800 text-center">
             <p className="text-sm text-gray-400">
-              NEW_USER?{' '}
-              <a href="/register" className="text-green-500 hover:underline">
-                CREATE_ACCOUNT
-              </a>
+              EXISTING_USER?{' '}
+              <button 
+                onClick={() => navigate('/login')}
+                className="text-green-500 hover:underline"
+              >
+                ACCESS_SYSTEM
+              </button>
             </p>
           </div>
 
-          {/* Status Footer */}
-          <div className="mt-6 pt-6 border-t border-gray-800">
-            <div className="flex items-center justify-between text-xs text-gray-600">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>SECURE_CONNECTION</span>
-              </div>
-              <span>SSL_ENCRYPTED</span>
-            </div>
-          </div>
+          
         </div>
 
-        {/* Warning Notice */}
-        <div className="mt-6 border-2 border-gray-800 bg-black p-4 text-center">
-          <p className="text-xs text-gray-600">
-            ⚠ UNAUTHORIZED ACCESS WILL BE LOGGED AND REPORTED
-          </p>
-        </div>
+        
       </div>
     </div>
   );
-};
-
-export default LoginPage;
+}

@@ -1,33 +1,34 @@
-// App.tsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import { Component, useState } from 'react';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import Homepage from './pages/Homepage';
-import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import './App.css'
+
+let router = createBrowserRouter([
+  {
+    path: '/',
+    Component: LandingPage,
+  },
+  {
+    path: '/login',
+    Component: LoginPage,
+  },
+  {
+    path: '/register',
+    Component: RegisterPage,
+  },
+  {
+    path: '/home',
+    Component: Dashboard,
+  }
+]);
 
 function App() {
-  // You'll eventually check if user is logged in
-  const isAuthenticated = false; // Replace with actual auth logic later
-
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Protected route - only accessible when logged in */}
-        <Route 
-          path="/dashboard" 
-          element={isAuthenticated ? <Homepage /> : <Navigate to="/login" />} 
-        />
-        
-        {/* Catch all - redirect to landing */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <RouterProvider router={router} />
   );
 }
 
-export default App;
+export default App
