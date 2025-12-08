@@ -27,48 +27,47 @@ let consoleSpyError: jest.SpyInstance
     jest.restoreAllMocks();
   })
 
-describe("Customer API Tests", () => {
+it('Should register a customer successfully', async () => {
   const mockCustomer = {
     customer_id: 1,
-    username: "testCustomer",
-    password: "hashed123",
-    email: "testCustomer@gmail.com",
-    address: "Mars",
-    status: "active",
+    username: 'testCustomer',
+    email: 'testCustomer@gmail.com',
+    address: 'Mars',
+    status: 'active',
     toJSON: jest.fn().mockReturnValue({
       customer_id: 1,
-      username: "testCustomer",
-      email: "testCustomer@gmail.com"
+      username: 'testCustomer',
+      email: 'testCustomer@gmail.com',
+      address: 'Mars',
+      status: 'active'
     })
   };
 
-  it("Should register a customer successfully", async () => {
-    (db.Customer.create as jest.Mock).mockResolvedValue(mockCustomer);
+  (db.Customer.create as jest.Mock).mockResolvedValue(mockCustomer);
 
-    const response = await request(app)
-      .post('/api/auth/register/customer')  
-      .send({
-        username: "testCustomer",
-        password: "hashed123",
-        email: "testCustomer@gmail.com",
-        status: "active",
-        address: "Mars"
-      });
+  const response = await request(app)
+    .post('/api/auth/register/customer')
+    .send({
+      username: 'testCustomer',
+      password: 'hashed123',
+      email: 'testCustomer@gmail.com',
+      status: 'active',
+      address: 'Mars'
+    });
 
-const userType = "customer"; 
-
-expect(response.status).toBe(201);
-expect(response.body).toEqual({
-  message: `${userType.charAt(0).toUpperCase() + userType.slice(1)} registered successfully`,
-  [userType]: {
-    customer_id: 1,
-    username: "testCustomer",
-    email: "testCustomer@gmail.com"
-  }
-});
+  expect(response.status).toBe(201);
+  expect(response.body).toEqual({
+    message: 'Customer registered successfully',
+    customer: {
+      customer_id: 1,
+      username: 'testCustomer',
+      email: 'testCustomer@gmail.com',
+      address: 'Mars',
+      status: 'active'
+    }
   });
-
 });
+
 
 describe("Dealer API Test", () => {
       const mockDealer = {
@@ -85,7 +84,7 @@ describe("Dealer API Test", () => {
         email: "testDealer@gmail.com"
     })
   };
-    it("Should register a dealear successfully", async () => {
+    it("Should register a dealer successfully", async () => {
         (db.Dealer.create as jest.Mock).mockResolvedValue(mockDealer);
 
         const response = await request(app).post('/api/auth/register/dealer').send({
@@ -123,7 +122,7 @@ describe("Provider API Test", () => {
     })
   };
     it("Should register a provider successfully", async () => {
-        (db.Dealer.create as jest.Mock).mockResolvedValue(mockProvider);
+        (db.Provider.create as jest.Mock).mockResolvedValue(mockProvider);
 
         const response = await request(app).post('/api/auth/register/provider').send({
         username: "testProvider",

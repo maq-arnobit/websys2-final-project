@@ -7,8 +7,8 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "test": "jest --coverage",
-    "dev":"nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon",
     "build": "tsc && cp -r models dist/ && cp -r config dist/ && cp -r migrations dist/ && cp -r seeders dist/",
     "start": "node dist/src/index.js"
   },
@@ -22,6 +22,7 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "express-session": "^1.18.2",
+    "loader": "^2.1.1",
     "mysql2": "^3.15.3",
     "pg": "^8.16.3",
     "sequelize": "^6.37.7",
