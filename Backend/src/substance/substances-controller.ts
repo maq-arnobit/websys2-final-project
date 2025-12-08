@@ -1,6 +1,7 @@
-// src/substances/substances-controller.ts
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth-middleware';
+import { getImageUrl } from '../file-upload/upload-middleware';
+import { deleteImageById } from '../file-upload/upload-middleware';
 const db = require('../../models');
 
 export class SubstancesController {
@@ -70,16 +71,25 @@ export class SubstancesController {
   };
 
   static getAll = async (req: AuthRequest, res: Response) => {
-    try {
-      const substances = await db.Substance.findAll({
-        include: [{
-          model: db.Provider,
-          as: 'provider',
-          attributes: { exclude: ['password'] }
-        }]
+  try {
+    const substances = await db.Substance.findAll({
+      include: [{
+        model: db.Provider,
+        as: 'provider',
+        attributes: { exclude: ['password'] }
+      }]
+    });
+
+   
+      const substancesWithImages = substances.map((substance: any) => {
+        const substanceData = substance.toJSON();
+        return {
+          ...substanceData,
+          image_url: getImageUrl('substance', substance.substance_id)
+        };
       });
 
-      return res.status(200).json({ substances });
+      return res.status(200).json({ substances: substancesWithImages });
     } catch (error: any) {
       return res.status(500).json({ 
         message: 'Error fetching substances', 
@@ -104,7 +114,13 @@ export class SubstancesController {
         return res.status(404).json({ message: 'Substance not found' });
       }
 
-      return res.status(200).json({ substance });
+      const substanceData = substance.toJSON();
+      const substanceWithImage = {
+      ...substanceData,
+      image_url: getImageUrl('substance', parseInt(id))
+    };
+
+      return res.status(200).json({ substance: substanceWithImage });
     } catch (error: any) {
       return res.status(500).json({ 
         message: 'Error fetching substance', 
@@ -142,27 +158,28 @@ export class SubstancesController {
   };
 
   static delete = async (req: AuthRequest, res: Response) => {
-    try {
-      const { id } = req.params;
+  try {
+    const { id } = req.params;
+    const substance = await db.Substance.findByPk(id);
 
-      const substance = await db.Substance.findByPk(id);
-
-      if (!substance) {
-        return res.status(404).json({ message: 'Substance not found' });
-      }
-
-      if (req.user?.type === 'provider' && substance.provider_id !== req.user.id) {
-        return res.status(403).json({ message: 'Cannot delete other providers substances' });
-      }
-
-      await substance.destroy();
-
-      return res.status(200).json({ message: 'Substance deleted successfully' });
-    } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error deleting substance', 
-        error: error.message 
-      });
+    if (!substance) {
+      return res.status(404).json({ message: 'Substance not found' });
     }
-  };
+
+    if (req.user?.type === 'provider' && substance.provider_id !== req.user.id) {
+      return res.status(403).json({ message: 'Cannot delete other providers substances' });
+    }
+
+    deleteImageById('substance', parseInt(id));
+
+    await substance.destroy();
+
+    return res.status(200).json({ message: 'Substance deleted successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ 
+      message: 'Error deleting substance', 
+      error: error.message 
+    });
+  }
+};
 }
