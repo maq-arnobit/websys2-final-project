@@ -1,12 +1,12 @@
 'use strict';
-const { Model } = require('sequelize');
+import { Model,DataTypes,Optional } from 'sequelize';
 
 module.exports = (sequelize, DataTypes) => {
-  class Inventory extends Model {
+  class OrderItem extends Model {
     static associate(models) {
-      this.belongsTo(models.Dealer, {
-        foreignKey: 'dealer_id',
-        as: 'dealer'
+      this.belongsTo(models.Order, {
+        foreignKey: 'order_id',
+        as: 'order'
       });
       this.belongsTo(models.Substance, {
         foreignKey: 'substance_id',
@@ -15,13 +15,13 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   
-  Inventory.init({
-    inventory_id: {
+  OrderItem.init({
+    orderItem_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    dealer_id: {
+    order_id: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
@@ -29,22 +29,27 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    quantityAvailable: {
+    quantity: {
       type: DataTypes.INTEGER,
-      defaultValue: 0,
+      allowNull: false,
       validate: {
-        min: 0
+        min: 1
       }
     },
-    warehouse: {
-      type: DataTypes.STRING
+    unitPrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false
+    },
+    subTotal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false
     }
   }, {
     sequelize,
-    modelName: 'Inventory',
-    tableName: 'inventories',
+    modelName: 'OrderItem',
+    tableName: 'order_items',
     timestamps: false
   });
   
-  return Inventory;
+  return OrderItem;
 };

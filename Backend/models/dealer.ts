@@ -1,18 +1,26 @@
 'use strict';
-const { Model } = require('sequelize');
+import { Model,DataTypes,Optional } from 'sequelize';
 
 module.exports = (sequelize, DataTypes) => {
-  class Customer extends Model {
+  class Dealer extends Model {
     static associate(models) {
       this.hasMany(models.Order, {
-        foreignKey: 'customer_id',
+        foreignKey: 'dealer_id',
         as: 'orders'
+      });
+      this.hasMany(models.Inventory, {
+        foreignKey: 'dealer_id',
+        as: 'inventory'
+      });
+      this.hasMany(models.PurchaseOrder, {
+        foreignKey: 'dealer_id',
+        as: 'purchaseOrders'
       });
     }
   }
   
-  Customer.init({
-    customer_id: {
+  Dealer.init({
+    dealer_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
@@ -26,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    address: {
+    warehouse: {
       type: DataTypes.STRING
     },
     status: {
@@ -40,13 +48,21 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         isEmail: true
       }
+    },
+    rating: {
+      type: DataTypes.DECIMAL(3, 2),
+      defaultValue: 0.00,
+      validate: {
+        min: 0,
+        max: 5
+      }
     }
   }, {
     sequelize,
-    modelName: 'Customer',
-    tableName: 'customers',
+    modelName: 'Dealer',
+    tableName: 'dealers',
     timestamps: false
   });
   
-  return Customer;
+  return Dealer;
 };

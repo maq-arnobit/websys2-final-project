@@ -1,26 +1,26 @@
 'use strict';
-const { Model } = require('sequelize');
+import { Model,DataTypes,Optional } from 'sequelize';
 
 module.exports = (sequelize, DataTypes) => {
-  class Dealer extends Model {
+  class Provider extends Model {
     static associate(models) {
-      this.hasMany(models.Order, {
-        foreignKey: 'dealer_id',
-        as: 'orders'
+      this.hasMany(models.Substance, {
+        foreignKey: 'provider_id',
+        as: 'substances'
       });
-      this.hasMany(models.Inventory, {
-        foreignKey: 'dealer_id',
-        as: 'inventory'
+      this.hasMany(models.ProviderTransport, {
+        foreignKey: 'provider_id',
+        as: 'transportOptions'
       });
       this.hasMany(models.PurchaseOrder, {
-        foreignKey: 'dealer_id',
+        foreignKey: 'provider_id',
         as: 'purchaseOrders'
       });
     }
   }
   
-  Dealer.init({
-    dealer_id: {
+  Provider.init({
+    provider_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
@@ -34,8 +34,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    warehouse: {
-      type: DataTypes.STRING
+    businessName: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'suspended'),
@@ -48,21 +49,13 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         isEmail: true
       }
-    },
-    rating: {
-      type: DataTypes.DECIMAL(3, 2),
-      defaultValue: 0.00,
-      validate: {
-        min: 0,
-        max: 5
-      }
     }
   }, {
     sequelize,
-    modelName: 'Dealer',
-    tableName: 'dealers',
+    modelName: 'Provider',
+    tableName: 'providers',
     timestamps: false
   });
   
-  return Dealer;
+  return Provider;
 };

@@ -7,6 +7,8 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
+    "migrate": "ts-node ./node_modules/.bin/typeorm migration:run",
+    "seed": "ts-node ./src/seeds/seed.ts",
     "test": "jest --verbose",
     "dev": "nodemon",
     "build": "tsc && cp -r models dist/ && cp -r config dist/ && cp -r migrations dist/ && cp -r seeders dist/",

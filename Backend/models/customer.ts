@@ -1,26 +1,18 @@
 'use strict';
-const { Model } = require('sequelize');
+import { Model,DataTypes,Optional } from 'sequelize';
 
 module.exports = (sequelize, DataTypes) => {
-  class Provider extends Model {
+  class Customer extends Model {
     static associate(models) {
-      this.hasMany(models.Substance, {
-        foreignKey: 'provider_id',
-        as: 'substances'
-      });
-      this.hasMany(models.ProviderTransport, {
-        foreignKey: 'provider_id',
-        as: 'transportOptions'
-      });
-      this.hasMany(models.PurchaseOrder, {
-        foreignKey: 'provider_id',
-        as: 'purchaseOrders'
+      this.hasMany(models.Order, {
+        foreignKey: 'customer_id',
+        as: 'orders'
       });
     }
   }
   
-  Provider.init({
-    provider_id: {
+  Customer.init({
+    customer_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
@@ -34,9 +26,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    businessName: {
-      type: DataTypes.STRING,
-      allowNull: false
+    address: {
+      type: DataTypes.STRING
     },
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'suspended'),
@@ -52,10 +43,10 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
-    modelName: 'Provider',
-    tableName: 'providers',
+    modelName: 'Customer',
+    tableName: 'customers',
     timestamps: false
   });
   
-  return Provider;
+  return Customer;
 };
