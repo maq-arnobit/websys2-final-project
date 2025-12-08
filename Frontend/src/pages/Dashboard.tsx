@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { authService } from '../services/authService';
-import { Shield, Package, TrendingUp, Users, Settings, Activity } from 'lucide-react';
+import { Package, TrendingUp, Users, Settings, Activity } from 'lucide-react';
 
 interface UserProfile {
   customer_id?: number;

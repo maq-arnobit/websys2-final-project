@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Shield, Lock, Eye, TrendingUp, Zap, Terminal } from 'lucide-react';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -19,15 +18,6 @@ const LandingPage = () => {
     }, 50);
     return () => clearInterval(interval);
   }, []);
-
-  const features = [
-    { icon: <Shield size={32} />, title: 'Encrypted', desc: 'Military-grade encryption' },
-    { icon: <Lock size={32} />, title: 'Anonymous', desc: 'Zero-knowledge architecture' },
-    { icon: <Eye size={32} />, title: 'Private', desc: 'No tracking, no logs' },
-    { icon: <TrendingUp size={32} />, title: 'Fast', desc: 'Instant transactions' },
-    { icon: <Zap size={32} />, title: 'Secure', desc: 'Multi-layer protection' },
-    { icon: <Terminal size={32} />, title: 'Advanced', desc: 'Professional tools' },
-  ];
 
   return (
     <div className="min-h-screen bg-black text-white font-mono">
