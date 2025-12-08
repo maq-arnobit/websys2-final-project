@@ -2,6 +2,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import routes from './routes/routes';
+import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 4200;
@@ -16,8 +17,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//routes
 app.use('/api', routes);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 
 
 app.listen(PORT, () => {
