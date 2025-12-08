@@ -79,7 +79,6 @@ describe("Dealer Controller", () => {
   }
 ];
 
-
         it("Should get Dealer Inventory", async () => {
         (db.Inventory.findAll as jest.Mock).mockResolvedValue(mockInventory);
 

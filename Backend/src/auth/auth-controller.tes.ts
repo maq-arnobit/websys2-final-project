@@ -36,10 +36,6 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-// -----------------------------------------------------
-//               CUSTOMER REGISTRATION TEST
-// -----------------------------------------------------
-
 describe("Customer API Tests", () => {
   const mockCustomer = {
     customer_id: 1,
