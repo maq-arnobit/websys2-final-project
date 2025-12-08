@@ -71,12 +71,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
-    paymentMethod: {
-      type: DataTypes.STRING
+     paymentMethod: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
     paymentDate: {
-      type: DataTypes.DATE
-    }
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+
   }, {
     sequelize,
     modelName: 'PurchaseOrder',

@@ -104,7 +104,6 @@ export class ProviderTransportsController {
         return res.status(404).json({ message: 'Transport option not found' });
       }
 
-      // Check if user owns this transport option
       if (req.user?.type === 'provider' && transport.provider_id !== req.user.id) {
         return res.status(403).json({ message: 'Cannot delete other providers transport options' });
       }

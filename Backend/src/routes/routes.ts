@@ -9,7 +9,10 @@ import { ProviderTransportsController } from '../provider-transports/provider-tr
 import { PurchaseOrdersController } from '../purchase-orders/purchase-orders-controller';
 import { InventoryController } from '../inventory/inventory-controller';
 import { OrdersController } from '../orders/orders-controller';
-
+import { ShipmentsController } from '../shipments/shipments-controller';
+import { OrderItemsController } from '../order-items/order-items-controller';
+import { upload } from '../file-upload/upload-middleware';
+import { ImagesController } from '../file-upload/images-controller';
 
 const router = Router();
 
@@ -52,6 +55,8 @@ router.get('/substances', authenticate(), SubstancesController.getAll);
 router.get('/substances/:id', authenticate(), SubstancesController.getById);
 router.put('/substances/:id', authenticate(['provider']), SubstancesController.update);
 router.delete('/substances/:id', authenticate(['provider']), SubstancesController.delete);
+router.post('/substances/:substanceId/image', authenticate(['provider']), upload.single('image'), ImagesController.uploadSubstanceImage);
+router.delete('/substances/:substanceId/image', authenticate(['provider']), ImagesController.deleteSubstanceImage);
 
 // Provider Transport Routes 
 router.post('/provider-transports', authenticate(['provider']), ProviderTransportsController.create);
@@ -71,6 +76,8 @@ router.get('/inventory', authenticate(), InventoryController.getAll);
 router.get('/inventory/:id', authenticate(), InventoryController.getById);
 router.put('/inventory/:id', authenticate(['dealer']), InventoryController.update);
 router.delete('/inventory/:id', authenticate(['dealer']), InventoryController.delete);
+router.post('/inventory/:inventoryId/image', authenticate(['dealer']), upload.single('image'), ImagesController.uploadInventoryImage);
+router.delete('/inventory/:inventoryId/image', authenticate(['dealer']), ImagesController.deleteInventoryImage);
 
 // Order Routes
 router.post('/orders', authenticate(['customer']), OrdersController.create);
@@ -78,5 +85,23 @@ router.get('/orders', authenticate(), OrdersController.getAll);
 router.get('/orders/:id', authenticate(), OrdersController.getById);
 router.put('/orders/:id', authenticate(['customer', 'dealer']), OrdersController.update);
 router.delete('/orders/:id', authenticate(['customer']), OrdersController.delete);
+
+// Order Items Routes
+router.post('/order-items', authenticate(['customer']), OrderItemsController.create);
+router.get('/order-items', authenticate(), OrderItemsController.getAll);
+router.get('/order-items/:id', authenticate(), OrderItemsController.getById);
+router.get('/order-items/order/:orderId', authenticate(), OrderItemsController.getByOrderId);
+router.put('/order-items/:id', authenticate(['customer']), OrderItemsController.update);
+router.delete('/order-items/:id', authenticate(['customer']), OrderItemsController.delete);
+
+// Shipment Routes
+router.post('/shipments', authenticate(['dealer']), ShipmentsController.create);
+router.get('/shipments', authenticate(), ShipmentsController.getAll);
+router.get('/shipments/:id', authenticate(), ShipmentsController.getById);
+router.get('/shipments/order/:orderId', authenticate(), ShipmentsController.getByOrderId);
+router.put('/shipments/:id', authenticate(['dealer']), ShipmentsController.update);
+router.delete('/shipments/:id', authenticate(['dealer']), ShipmentsController.delete);
+
+
 
 export default router;
