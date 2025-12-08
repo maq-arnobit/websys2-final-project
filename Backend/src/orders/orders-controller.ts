@@ -1,8 +1,9 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-const db = require('../../models');
+import { AuthRequest } from '../auth/auth-middleware';
 
-export class OrdersController {
+import db from '../../models';
+
+export class OrderController {
   static create = async (req: AuthRequest, res: Response) => {
     const maxRetries = 20;
     let attempts = 0;
@@ -16,8 +17,6 @@ export class OrdersController {
         const { dealer_id, items, deliveryAddress, paymentMethod, shippingCost } = req.body;
 
         if (attempts === 0) {
-          console.log('Creating order with data:', { dealer_id, items, deliveryAddress, paymentMethod, shippingCost });
-          
           if (!dealer_id || !items || !Array.isArray(items) || items.length === 0 || !deliveryAddress || !paymentMethod) {
             return res.status(400).json({ 
               message: 'Missing required fields: dealer_id, items (array), deliveryAddress, paymentMethod' 
@@ -47,8 +46,6 @@ export class OrdersController {
           }
         }
 
-        console.log(`Attempt ${attempts + 1}: Creating order...`);
-
         let totalCost = items.reduce((sum: number, item: any) => {
           return sum + (item.quantity * item.unitPrice);
         }, 0);
@@ -56,8 +53,6 @@ export class OrdersController {
         if (shippingCost) {
           totalCost += parseFloat(shippingCost);
         }
-
-        console.log('Calculated total cost:', totalCost);
 
         const order = await db.Order.create({
           customer_id: req.user.id,
@@ -67,35 +62,19 @@ export class OrdersController {
           paymentMethod,
           paymentDate: new Date(),
           shippingCost: shippingCost || 0,
-          status: 'pending',
+          orderStatus: 'pending',
           paymentStatus: 'pending'
         });
 
-        console.log('Order created with ID:', order.order_id);
-
-        const orderItems = [];
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          console.log(`Creating order item ${i + 1}:`, item);
-          
-          try {
-            const orderItem = await db.OrderItem.create({
-              order_id: order.order_id,
-              substance_id: item.substance_id,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subTotal: Math.round(item.quantity * item.unitPrice * 100) / 100
-            });
-            orderItems.push(orderItem);
-            console.log(`Order item ${i + 1} created successfully`);
-          } catch (itemError: any) {
-            console.error(`Error creating order item ${i + 1}:`, itemError.message);
-            await order.destroy();
-            throw itemError;
-          }
+        for (const item of items) {
+          await db.OrderItem.create({
+            order_id: order.order_id,
+            substance_id: item.substance_id,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subTotal: Math.round(item.quantity * item.unitPrice * 100) / 100
+          });
         }
-
-        console.log('All order items created. Fetching complete order...');
 
         const completeOrder = await db.Order.findByPk(order.order_id, {
           include: [
@@ -117,46 +96,29 @@ export class OrdersController {
           ]
         });
 
-        console.log('Order creation complete!');
-
         return res.status(201).json({
           message: 'Order created successfully',
           order: completeOrder
         });
       } catch (error: any) {
-        console.error(`Error creating order (attempt ${attempts + 1}):`, error);
-        console.error('Error details:', {
-          message: error.message,
-          code: error.code,
-          constraint: error.constraint,
-          parent: error.parent
-        });
-        
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
-          
           try {
             await db.sequelize.query(`SELECT nextval('orders_order_id_seq')`);
-            console.log('Advanced orders sequence, retrying...');
             continue;
-          } catch (seqError) {
-            console.error('Error advancing sequence:', seqError);
-          }
-          
+          } catch (seqError) {}
           if (attempts >= maxRetries) {
             return res.status(500).json({ 
-              message: `Unable to create order after ${maxRetries} attempts. Please contact support.`,
+              message: `Unable to create order after ${maxRetries} attempts.`,
               error: 'ID generation failed'
             });
           }
           continue;
         }
-        
         return res.status(500).json({ 
           message: 'Error creating order', 
-          error: error.message,
-          details: process.env.NODE_ENV === 'development' ? error : undefined
+          error: error.message
         });
       }
     }
@@ -190,10 +152,7 @@ export class OrdersController {
 
       return res.status(200).json({ orders });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching orders', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching orders', error: error.message });
     }
   };
 
@@ -231,10 +190,7 @@ export class OrdersController {
 
       return res.status(200).json({ order });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching order', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching order', error: error.message });
     }
   };
 
@@ -283,10 +239,7 @@ export class OrdersController {
         order: updatedOrder
       });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error updating order', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error updating order', error: error.message });
     }
   };
 
@@ -312,10 +265,7 @@ export class OrdersController {
 
       return res.status(200).json({ message: 'Order deleted successfully' });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error deleting order', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error deleting order', error: error.message });
     }
   };
 }

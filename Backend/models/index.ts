@@ -1,39 +1,48 @@
-import { Sequelize, DataTypes } from 'sequelize';
-import fs from 'fs';
-import path from 'path';
+import { Sequelize, DataTypes } from "sequelize";
+import fs from "fs";
+import path from "path";
 
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-
-// Direct configuration - No .env file needed
-const sequelize = new Sequelize('your_database_name', 'root', 'your_password', {
-  host: 'localhost',
-  port: 3306,
-  dialect: 'mysql', // or 'postgres', 'sqlite', 'mssql'
-  logging: console.log, // or false to disable
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
+const sequelize = new Sequelize(
+  "postgres", 
+  "postgres.fexgenuaqawdslabpifp", 
+  "Password67!", 
+  {
+    host: "aws-1-ap-southeast-2.pooler.supabase.com",
+    dialect: "postgres",
+    port: 5432,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
   }
-});
+);
 
 const db: any = {};
+const basename = path.basename(__filename);
 
-// Read all model files
 fs.readdirSync(__dirname)
   .filter(file => {
     return (
-      file.indexOf('.') !== 0 &&
       file !== basename &&
-      (file.slice(-3) === '.ts' || file.slice(-3) === '.js') &&
-      file.indexOf('.test.ts') === -1 &&
-      file.indexOf('.test.js') === -1
+      (file.endsWith(".js") || file.endsWith(".ts")) &&
+      !file.endsWith(".d.ts") &&
+      !file.endsWith(".map")
     );
   })
   .forEach(file => {
-    const model = require(path.join(__dirname, file)).default(sequelize, DataTypes);
+    const modelPath = path.join(__dirname, file);
+    const modelModule = require(modelPath);
+
+    const modelFactory = modelModule.default || modelModule;
+
+    if (typeof modelFactory !== "function") {
+      console.warn(`Skipping ${file} (not a model factory)`);
+      return;
+    }
+
+    const model = modelFactory(sequelize, DataTypes);
     db[model.name] = model;
   });
 
