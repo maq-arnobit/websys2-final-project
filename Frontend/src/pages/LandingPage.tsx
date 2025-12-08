@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Eye, TrendingUp, Zap, Terminal } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 
 const LandingPage = () => {
-  const [glitchText, setGlitchText] = useState('Totally Legal Substances');
+  const navigate = useNavigate();
   const [typedText, setTypedText] = useState('');
-  const fullText = '> typing message here...';
+  const fullText = '> typing message here.';
 
   useEffect(() => {
     let index = 0;
@@ -18,15 +18,6 @@ const LandingPage = () => {
     }, 50);
     return () => clearInterval(interval);
   }, []);
-
-  const features = [
-    { icon: <Shield size={32} />, title: 'Encrypted', desc: 'Military-grade encryption' },
-    { icon: <Lock size={32} />, title: 'Anonymous', desc: 'Zero-knowledge architecture' },
-    { icon: <Eye size={32} />, title: 'Private', desc: 'No tracking, no logs' },
-    { icon: <TrendingUp size={32} />, title: 'Fast', desc: 'Instant transactions' },
-    { icon: <Zap size={32} />, title: 'Secure', desc: 'Multi-layer protection' },
-    { icon: <Terminal size={32} />, title: 'Advanced', desc: 'Professional tools' },
-  ];
 
   return (
     <div className="min-h-screen bg-black text-white font-mono">
@@ -72,7 +63,7 @@ const LandingPage = () => {
             0 0 5px rgba(0, 255, 0, 0.5);
         }
         .cursor::after {
-          content: '▋';
+          content: '|';
           animation: blink 1s infinite;
         }
         @keyframes blink {
@@ -91,9 +82,18 @@ const LandingPage = () => {
               </span>
             </div>
             <nav className="flex gap-4">
-              <a href="/login" className="border-2 border-green-500 px-4 py-1 text-green-500 hover:bg-green-500 hover:bg-opacity-20 transition-all">
+              <button 
+                onClick={() => navigate('/login')}
+                className="border-2 border-green-500 px-4 py-1 text-green-500 hover:bg-green-500 hover:bg-opacity-20 transition-all"
+              >
                 LOGIN
-              </a>
+              </button>
+              <button 
+                onClick={() => navigate('/register')}
+                className="border-2 border-green-500 px-4 py-1 text-green-500 hover:bg-green-500 hover:bg-opacity-20 transition-all"
+              >
+                REGISTER
+              </button>
             </nav>
           </div>
         </header>
@@ -101,18 +101,18 @@ const LandingPage = () => {
         <section className="max-w-7xl mx-auto px-4 py-20">
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold mb-6 text-green-500 terminal-glow glitch">
-              {glitchText}
+              Totally Legal Substances
             </h1>
             <p className="text-xl text-gray-400 mb-8 cursor">
               {typedText}
             </p>
             <div className="flex justify-center gap-4">
-              <a 
-                href="/login"
+              <button 
+                onClick={() => navigate('/login')}
                 className="terminal-border bg-black px-8 py-4 text-green-500 font-bold text-lg hover:bg-green-500 hover:bg-opacity-10 transition-all"
               >
                 &gt; ACCESS_SYSTEM
-              </a>
+              </button>
             </div>
           </div>
         </section>
@@ -124,7 +124,7 @@ const LandingPage = () => {
               <span className="text-green-500 text-sm">SYSTEM ONLINE</span>
             </div>
             <p className="text-gray-600 text-xs">
-              © 2025 footer text here // footer text here
+              © 2025 totally legal substances // ALL SYSTEMS OPERATIONAL
             </p>
           </div>
         </footer>

@@ -8,8 +8,9 @@
   },
   "scripts": {
     "test": "jest --coverage",
-    "start": "nodemon",
-    "build": "tsc"
+    "dev":"nodemon",
+    "build": "tsc && cp -r models dist/ && cp -r config dist/ && cp -r migrations dist/ && cp -r seeders dist/",
+    "start": "node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
