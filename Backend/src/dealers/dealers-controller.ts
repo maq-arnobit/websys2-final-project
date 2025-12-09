@@ -1,15 +1,94 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-import { UserController } from '../controllers/users-controllers';
+import { AuthRequest } from '../auth/auth-middleware';
+import { hashPassword } from '../utils/utils';
 import { getImageUrl } from '../file-upload/upload-middleware';
-const db = require('../../models');
 
-export class DealerController extends UserController {
-  constructor() {
-    super('dealer', db.Dealer, 'dealer_id');
+import db from '../../models';
+
+export class DealerController {
+  async getById(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!req.user || req.user.type !== 'dealer' || req.user.id !== parseInt(id)) {
+        return res.status(403).json({ message: 'Cannot access other profiles' });
+      }
+
+      const dealer = await db.Dealer.findByPk(id, {
+        attributes: { exclude: ['password'] }
+      });
+
+      if (!dealer) {
+        return res.status(404).json({ message: 'Dealer not found' });
+      }
+
+      return res.status(200).json({ dealer });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Error fetching dealer', error: error.message });
+    }
   }
 
-  static async getInventory(req: AuthRequest, res: Response) {
+  async update(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { password, ...otherData } = req.body;
+
+      if (!req.user || req.user.type !== 'dealer' || req.user.id !== parseInt(id)) {
+        return res.status(403).json({ message: 'Cannot update other profiles' });
+      }
+
+      const dealer = await db.Dealer.findByPk(id);
+
+      if (!dealer) {
+        return res.status(404).json({ message: 'Dealer not found' });
+      }
+
+      const updateData: any = { ...otherData };
+      if (password) {
+        updateData.password = await hashPassword(password);
+      }
+
+      await dealer.update(updateData);
+
+      const updatedDealer = await db.Dealer.findByPk(id, {
+        attributes: { exclude: ['password'] }
+      });
+
+      return res.status(200).json({
+        message: 'Dealer updated successfully',
+        dealer: updatedDealer
+      });
+    } catch (error: any) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return res.status(400).json({ message: 'Username or email already exists' });
+      }
+      return res.status(500).json({ message: 'Error updating dealer', error: error.message });
+    }
+  }
+
+  async delete(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!req.user || req.user.type !== 'dealer' || req.user.id !== parseInt(id)) {
+        return res.status(403).json({ message: 'Cannot delete other accounts' });
+      }
+
+      const dealer = await db.Dealer.findByPk(id);
+
+      if (!dealer) {
+        return res.status(404).json({ message: 'Dealer not found' });
+      }
+
+      await dealer.destroy();
+
+      return res.status(200).json({ message: 'Dealer account deleted successfully' });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Error deleting dealer', error: error.message });
+    }
+  }
+
+  async getInventory(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
 
@@ -48,7 +127,7 @@ export class DealerController extends UserController {
     }
   }
 
-  static async getOrders(req: AuthRequest, res: Response) {
+  async getOrders(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
 
@@ -89,7 +168,7 @@ export class DealerController extends UserController {
     }
   }
 
-  static async getPurchaseOrders(req: AuthRequest, res: Response) {
+  async getPurchaseOrders(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
 

@@ -1,9 +1,9 @@
 'use strict';
-import { Model,DataTypes,Optional } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize: any, DataTypes: any) => {
   class Customer extends Model {
-    static associate(models) {
+    static associate(models: any) {
       this.hasMany(models.Order, {
         foreignKey: 'customer_id',
         as: 'orders'

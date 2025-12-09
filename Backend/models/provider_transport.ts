@@ -1,7 +1,7 @@
 'use strict';
 import { Model,DataTypes,Optional } from 'sequelize';
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize: any, DataTypes: any) => {
   class ProviderTransport extends Model {
     static associate(models) {
       this.belongsTo(models.Provider, {

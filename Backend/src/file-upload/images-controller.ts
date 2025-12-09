@@ -1,11 +1,11 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
+import { AuthRequest } from '../auth/auth-middleware';
 import { saveImageWithId, deleteImageById, getImageUrl } from './upload-middleware';
 import fs from 'fs';
-import path from 'path';
-const db = require('../../models');
 
-export class ImagesController {
+import db from '../../models';
+
+export class ImageController {
   static uploadSubstanceImage = async (req: AuthRequest, res: Response) => {
     try {
       if (!req.user || req.user.type !== 'provider') {

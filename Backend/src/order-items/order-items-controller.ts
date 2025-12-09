@@ -1,8 +1,9 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-const db = require('../../models');
+import { AuthRequest } from '../auth/auth-middleware';
 
-export class OrderItemsController {
+import db from '../../models';
+
+export class OrderItemController {
   static create = async (req: AuthRequest, res: Response) => {
     const maxRetries = 20;
     let attempts = 0;
@@ -23,9 +24,7 @@ export class OrderItemsController {
           }
 
           if (quantity < 1) {
-            return res.status(400).json({ 
-              message: 'Quantity must be at least 1' 
-            });
+            return res.status(400).json({ message: 'Quantity must be at least 1' });
           }
         }
 
@@ -61,15 +60,13 @@ export class OrderItemsController {
           subTotal
         });
 
-        const orderItems = await db.OrderItem.findAll({
-          where: { order_id }
-        });
+        const orderItems = await db.OrderItem.findAll({ where: { order_id } });
 
         const totalCost = orderItems.reduce((sum: number, item: any) => {
           return sum + parseFloat(item.subTotal);
         }, 0);
 
-        await order.update({ totalAmount: Math.round(totalCost * 100) / 100 }); 
+        await order.update({ totalAmount: Math.round(totalCost * 100) / 100 });
 
         const completeOrderItem = await db.OrderItem.findByPk(orderItem.orderItem_id, {
           include: [
@@ -91,33 +88,22 @@ export class OrderItemsController {
           orderItem: completeOrderItem
         });
       } catch (error: any) {
-        console.error(`Error creating order item (attempt ${attempts + 1}):`, error.message);
-        
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
-          
           try {
             await db.sequelize.query(`SELECT nextval('order_items_orderitem_id_seq')`);
-            console.log('Advanced order_items sequence, retrying...');
             continue;
-          } catch (seqError) {
-            console.error('Error advancing sequence:', seqError);
-          }
-          
+          } catch (seqError) {}
           if (attempts >= maxRetries) {
             return res.status(500).json({ 
-              message: `Unable to create order item after ${maxRetries} attempts. Please contact support.`,
+              message: `Unable to create order item after ${maxRetries} attempts.`,
               error: 'ID generation failed'
             });
           }
           continue;
         }
-        
-        return res.status(500).json({ 
-          message: 'Error creating order item', 
-          error: error.message 
-        });
+        return res.status(500).json({ message: 'Error creating order item', error: error.message });
       }
     }
   };
@@ -148,10 +134,7 @@ export class OrderItemsController {
 
       return res.status(200).json({ orderItems });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching order items', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching order items', error: error.message });
     }
   };
 
@@ -195,10 +178,7 @@ export class OrderItemsController {
 
       return res.status(200).json({ orderItem });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching order item', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching order item', error: error.message });
     }
   };
 
@@ -237,10 +217,7 @@ export class OrderItemsController {
 
       return res.status(200).json({ orderItems });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching order items', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching order items', error: error.message });
     }
   };
 
@@ -250,9 +227,7 @@ export class OrderItemsController {
       const { quantity, unitPrice } = req.body;
 
       if (quantity && quantity < 1) {
-        return res.status(400).json({ 
-          message: 'Quantity must be at least 1' 
-        });
+        return res.status(400).json({ message: 'Quantity must be at least 1' });
       }
 
       const orderItem = await db.OrderItem.findByPk(id, {
@@ -298,7 +273,7 @@ export class OrderItemsController {
         return sum + parseFloat(item.subTotal);
       }, 0);
 
-      await orderItem.order.update({ totalAmount: Math.round(totalCost * 100) / 100 });  // Changed to totalAmount
+      await orderItem.order.update({ totalAmount: Math.round(totalCost * 100) / 100 });
 
       const updatedOrderItem = await db.OrderItem.findByPk(id, {
         include: [
@@ -320,10 +295,7 @@ export class OrderItemsController {
         orderItem: updatedOrderItem
       });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error updating order item', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error updating order item', error: error.message });
     }
   };
 
@@ -367,22 +339,19 @@ export class OrderItemsController {
         }, 0);
 
         await db.Order.update(
-          { totalAmount: Math.round(totalCost * 100) / 100 },  
+          { totalAmount: Math.round(totalCost * 100) / 100 },
           { where: { order_id: orderId } }
         );
       } else {
         await db.Order.update(
-          { totalAmount: 0 },  
+          { totalAmount: 0 },
           { where: { order_id: orderId } }
         );
       }
 
       return res.status(200).json({ message: 'Order item deleted successfully' });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error deleting order item', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error deleting order item', error: error.message });
     }
   };
 }

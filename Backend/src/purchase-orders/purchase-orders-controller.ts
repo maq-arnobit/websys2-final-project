@@ -1,38 +1,39 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-const db = require('../../models');
+import { AuthRequest } from '../auth/auth-middleware';
 
-export class PurchaseOrdersController {
-    static create = async (req: AuthRequest, res: Response) => {
+import db from '../../models';
+
+export class PurchaseOrderController {
+  static create = async (req: AuthRequest, res: Response) => {
     const maxRetries = 20;
     let attempts = 0;
 
     while (attempts < maxRetries) {
-        try {
+      try {
         if (!req.user || req.user.type !== 'dealer') {
-            return res.status(403).json({ message: 'Only dealers can create purchase orders' });
+          return res.status(403).json({ message: 'Only dealers can create purchase orders' });
         }
 
         const { provider_id, substance_id, providerTransport_id, quantityOrdered, unitCost, paymentMethod } = req.body;
        
         if (attempts === 0) {
-            if (!provider_id || !substance_id || !providerTransport_id || !quantityOrdered || !unitCost || !paymentMethod) {
+          if (!provider_id || !substance_id || !providerTransport_id || !quantityOrdered || !unitCost || !paymentMethod) {
             return res.status(400).json({ 
-                message: 'Missing required fields: provider_id, substance_id, providerTransport_id, quantityOrdered, unitCost, paymentMethod' 
+              message: 'Missing required fields: provider_id, substance_id, providerTransport_id, quantityOrdered, unitCost, paymentMethod' 
             });
-            }
+          }
         }
 
         const transport = await db.ProviderTransport.findByPk(providerTransport_id);
         
         if (!transport) {
-            return res.status(404).json({ message: 'Transport option not found' });
+          return res.status(404).json({ message: 'Transport option not found' });
         }
 
         if (transport.provider_id !== provider_id) {
-            return res.status(400).json({ 
-                message: 'Transport option does not belong to the specified provider' 
-            });
+          return res.status(400).json({ 
+            message: 'Transport option does not belong to the specified provider' 
+          });
         }
 
         const parsedQuantity = parseFloat(quantityOrdered);
@@ -43,63 +44,53 @@ export class PurchaseOrdersController {
         const totalCost = Math.round((subtotal + transportCost) * 100) / 100;
 
         const purchaseOrder = await db.PurchaseOrder.create({
-            dealer_id: req.user.id,
-            provider_id,
-            substance_id,
-            providerTransport_id,
-            quantityOrdered: parsedQuantity,
-            unitCost: parsedUnitCost,
-            transportCost: transportCost,  
-            totalCost,
-            paymentMethod,
-            paymentDate: new Date(),
-            status: 'pending'
+          dealer_id: req.user.id,
+          provider_id,
+          substance_id,
+          providerTransport_id,
+          quantityOrdered: parsedQuantity,
+          unitCost: parsedUnitCost,
+          transportCost: transportCost,
+          totalCost,
+          paymentMethod,
+          paymentDate: new Date(),
+          status: 'pending'
         });
 
         const completePurchaseOrder = await db.PurchaseOrder.findByPk(purchaseOrder.purchaseOrder_id, {
-            include: [
+          include: [
             { model: db.Dealer, as: 'dealer', attributes: { exclude: ['password'] } },
             { model: db.Provider, as: 'provider', attributes: { exclude: ['password'] } },
             { model: db.Substance, as: 'substance' },
             { model: db.ProviderTransport, as: 'transport' }
-            ]
+          ]
         });
 
         return res.status(201).json({
-            message: 'Purchase order created successfully',
-            purchaseOrder: completePurchaseOrder
+          message: 'Purchase order created successfully',
+          purchaseOrder: completePurchaseOrder
         });
-        } catch (error: any) {
-        console.error(`Error creating purchase order (attempt ${attempts + 1}):`, error.message);
-        
+      } catch (error: any) {
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
-            attempts++;
-            
-            try {
+          attempts++;
+          try {
             await db.sequelize.query(`SELECT nextval('purchase_orders_purchaseorder_id_seq')`);
-            console.log('Advanced purchase_orders sequence, retrying...');
             continue;
-            } catch (seqError) {
-            console.error('Error advancing sequence:', seqError);
-            }
-            
-            if (attempts >= maxRetries) {
+          } catch (seqError) {}
+          if (attempts >= maxRetries) {
             return res.status(500).json({ 
-                message: `Unable to create purchase order after ${maxRetries} attempts. Please contact support.`,
-                error: 'ID generation failed'
+              message: `Unable to create purchase order after ${maxRetries} attempts.`,
+              error: 'ID generation failed'
             });
-            }
-            continue;
+          }
+          continue;
         }
-        
-        return res.status(500).json({ 
-            message: 'Error creating purchase order', 
-            error: error.message 
-        });
-        }
+        return res.status(500).json({ message: 'Error creating purchase order', error: error.message });
+      }
     }
-    };
+  };
+
   static getAll = async (req: AuthRequest, res: Response) => {
     try {
       const purchaseOrders = await db.PurchaseOrder.findAll({
@@ -113,10 +104,7 @@ export class PurchaseOrdersController {
 
       return res.status(200).json({ purchaseOrders });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching purchase orders', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching purchase orders', error: error.message });
     }
   };
 
@@ -139,10 +127,7 @@ export class PurchaseOrdersController {
 
       return res.status(200).json({ purchaseOrder });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching purchase order', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching purchase order', error: error.message });
     }
   };
 
@@ -171,10 +156,7 @@ export class PurchaseOrdersController {
         purchaseOrder
       });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error updating purchase order', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error updating purchase order', error: error.message });
     }
   };
 
@@ -196,10 +178,7 @@ export class PurchaseOrdersController {
 
       return res.status(200).json({ message: 'Purchase order deleted successfully' });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error deleting purchase order', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error deleting purchase order', error: error.message });
     }
   };
 }

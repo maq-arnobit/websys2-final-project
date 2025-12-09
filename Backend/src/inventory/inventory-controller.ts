@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-import { getImageUrl } from '../file-upload/upload-middleware';
-import { deleteImageById } from '../file-upload/upload-middleware';
-const db = require('../../models');
+import { AuthRequest } from '../auth/auth-middleware';
+import { getImageUrl, deleteImageById } from '../file-upload/upload-middleware';
+
+import db from '../../models';
 
 export class InventoryController {
   static create = async (req: AuthRequest, res: Response) => {
@@ -62,78 +62,64 @@ export class InventoryController {
           inventory: inventoryWithDetails
         });
       } catch (error: any) {
-        console.error(`Error creating inventory (attempt ${attempts + 1}):`, error.message);
-        
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
-          
           try {
             await db.sequelize.query(`SELECT nextval('inventories_inventory_id_seq')`);
-            console.log('Advanced inventories sequence, retrying...');
             continue;
-          } catch (seqError) {
-            console.error('Error advancing sequence:', seqError);
-          }
-          
+          } catch (seqError) {}
           if (attempts >= maxRetries) {
             return res.status(500).json({ 
-              message: `Unable to create inventory after ${maxRetries} attempts. Please contact support.`,
+              message: `Unable to create inventory after ${maxRetries} attempts.`,
               error: 'ID generation failed'
             });
           }
           continue;
         }
-        
-        return res.status(500).json({ 
-          message: 'Error creating inventory item', 
-          error: error.message 
-        });
+        return res.status(500).json({ message: 'Error creating inventory item', error: error.message });
       }
     }
   };
 
   static getAll = async (req: AuthRequest, res: Response) => {
-  try {
-    const inventory = await db.Inventory.findAll({
-      include: [{
-        model: db.Substance,
-        as: 'substance',
-        include: [{ 
-          model: db.Provider, 
-          as: 'provider', 
-          attributes: { exclude: ['password'] } 
+    try {
+      const inventory = await db.Inventory.findAll({
+        include: [{
+          model: db.Substance,
+          as: 'substance',
+          include: [{ 
+            model: db.Provider, 
+            as: 'provider', 
+            attributes: { exclude: ['password'] } 
+          }]
+        },
+        {
+          model: db.Dealer,
+          as: 'dealer',
+          attributes: { exclude: ['password'] }
         }]
-      },
-      {
-        model: db.Dealer,
-        as: 'dealer',
-        attributes: { exclude: ['password'] }
-      }]
-    });
+      });
 
-    const inventoryWithImages = inventory.map((item: any) => {
-      const itemData = item.toJSON();
-      return {
-        ...itemData,
-        image_url: getImageUrl('inventory', item.inventory_id),
-        substance: {
-          ...itemData.substance,
-          image_url: getImageUrl('substance', item.substance_id)
-        }
-      };
-    });
+      const inventoryWithImages = inventory.map((item: any) => {
+        const itemData = item.toJSON();
+        return {
+          ...itemData,
+          image_url: getImageUrl('inventory', item.inventory_id),
+          substance: {
+            ...itemData.substance,
+            image_url: getImageUrl('substance', item.substance_id)
+          }
+        };
+      });
 
-    return res.status(200).json({ inventory: inventoryWithImages });
-  } catch (error: any) {
-    return res.status(500).json({ 
-      message: 'Error fetching inventory', 
-      error: error.message 
-    });
-  }
-};
+      return res.status(200).json({ inventory: inventoryWithImages });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Error fetching inventory', error: error.message });
+    }
+  };
 
-    static getById = async (req: AuthRequest, res: Response) => {
+  static getById = async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -170,10 +156,7 @@ export class InventoryController {
 
       return res.status(200).json({ inventory: inventoryWithImage });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching inventory item', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching inventory item', error: error.message });
     }
   };
 
@@ -210,10 +193,7 @@ export class InventoryController {
         inventory: updatedInventory
       });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error updating inventory item', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error updating inventory item', error: error.message });
     }
   };
 
@@ -232,15 +212,11 @@ export class InventoryController {
       }
 
       deleteImageById('inventory', parseInt(id));
-
       await inventory.destroy();
 
       return res.status(200).json({ message: 'Inventory item deleted successfully' });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error deleting inventory item', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error deleting inventory item', error: error.message });
     }
   };
 }

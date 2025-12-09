@@ -1,48 +1,34 @@
-import { Request, Response } from 'express';
-import { hashPassword, comparePassword } from '../utils/utils';
-import { createSession, deleteSession, AuthRequest } from '../middleware/auth-middleware';
+import { Request, Response, NextFunction } from 'express';
+import passport from '../passport/passport';
+import { hashPassword } from '../utils/utils';
+import { AuthRequest } from './auth-middleware';
 
-let db: any;
-
-interface UserModel {
-  findOne: (options: any) => Promise<any>;
-  create: (data: any) => Promise<any>;
-  findByPk: (id: number, options?: any) => Promise<any>;
-}
+import db from '../../models';
 
 interface ModelConfig {
-  model: UserModel;
+  model: any;
   idField: string;
   requiredFields: string[];
   additionalFields?: Record<string, any>;
 }
 
 export class AuthController {
-  private static getDb() {
-    if (!db) {
-      db = require('../../models');
-    }
-    return db;
-  }
-
   private static getModelConfig(): Record<string, ModelConfig> {
-    const database = this.getDb();
-    
     return {
       customer: {
-        model: database.Customer,
+        model: db.Customer,
         idField: 'customer_id',
         requiredFields: ['username', 'password', 'email'],
         additionalFields: { status: 'active' }
       },
       dealer: {
-        model: database.Dealer,
+        model: db.Dealer,
         idField: 'dealer_id',
         requiredFields: ['username', 'password', 'email'],
         additionalFields: { status: 'active', rating: 0.0 }
       },
       provider: {
-        model: database.Provider,
+        model: db.Provider,
         idField: 'provider_id',
         requiredFields: ['username', 'password', 'email', 'businessName'],
         additionalFields: { status: 'active' }
@@ -100,12 +86,11 @@ export class AuthController {
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
           
-          const db = this.getDb();
           const sequenceName = `${userType}s_${userType}_id_seq`;
           
           try {
             await db.sequelize.query(`SELECT nextval('${sequenceName}')`);
-            continue; 
+            continue;
           } catch (seqError) {}
           
           if (attempts >= maxRetries) {
@@ -157,79 +142,55 @@ export class AuthController {
     return AuthController.registerUser(req, res, 'provider');
   }
 
-  static login = async (req: Request, res: Response) => {
-    try {
-      const { username, password, userType } = req.body;
+  static login = (req: Request, res: Response, next: NextFunction) => {
+  // Validate userType exists before calling passport
+  if (!req.body.userType) {
+    return res.status(400).json({ message: 'User type is required' });
+  }
 
-      if (!username || !password || !userType) {
-        return res.status(400).json({ message: 'Username, password, and userType are required' });
+  passport.authenticate('local', (err: any, user: any, info: any) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error logging in', error: err.message });
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: info?.message || 'Invalid credentials' });
+    }
+
+    // Login user with session
+    req.login(user, (loginErr) => {
+      if (loginErr) {
+        return res.status(500).json({ message: 'Error creating session', error: loginErr.message });
       }
-
-      const modelConfig = this.getModelConfig();
-      const config = modelConfig[userType];
-      
-      if (!config) {
-        return res.status(400).json({ message: 'Invalid user type' });
-      }
-
-      const user = await config.model.findOne({ where: { username } });
-
-      if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      if (user.status !== 'active') {
-        return res.status(403).json({ message: 'Account is not active' });
-      }
-
-      const isPasswordValid = await comparePassword(password, user.password);
-
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      const userId = user[config.idField];
-      const sessionId = createSession(userId, userType, username);
-
-      res.cookie('sessionId', sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000,
-        path: '/'
-      });
 
       return res.status(200).json({
         message: 'Login successful',
-        userType,
-        userId,
-        username: user.username,
-        email: user.email
+        user: {
+          id: user.id,
+          type: user.type,
+          username: user.username,
+          email: user.email
+        }
       });
-    } catch (error: any) {
-      return res.status(500).json({ message: 'Error logging in', error: error.message });
-    }
-  }
+    });
+  })(req, res, next);
+}
 
   static logout = async (req: AuthRequest, res: Response) => {
-    try {
-      const sessionId = req.cookies?.sessionId;
-
-      if (sessionId) {
-        deleteSession(sessionId);
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error logging out', error: err.message });
       }
-
-      res.clearCookie('sessionId', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/'
+      
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) {
+          return res.status(500).json({ message: 'Error destroying session', error: sessionErr.message });
+        }
+        
+        res.clearCookie('connect.sid');
+        return res.status(200).json({ message: 'Logout successful' });
       });
-
-      return res.status(200).json({ message: 'Logout successful' });
-    } catch (error: any) {
-      return res.status(500).json({ message: 'Error logging out', error: error.message });
-    }
+    });
   }
 
   static getProfile = async (req: AuthRequest, res: Response) => {

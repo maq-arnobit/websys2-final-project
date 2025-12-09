@@ -1,8 +1,9 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-const db = require('../../models');
+import { AuthRequest } from '../auth/auth-middleware';
 
-export class ShipmentsController {
+import db from '../../models';
+
+export class ShipmentController {
   static create = async (req: AuthRequest, res: Response) => {
     const maxRetries = 20;
     let attempts = 0;
@@ -94,23 +95,16 @@ export class ShipmentsController {
           shipment: completeShipment
         });
       } catch (error: any) {
-        console.error(`Error creating shipment (attempt ${attempts + 1}):`, error.message);
-        
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
-          
           try {
             await db.sequelize.query(`SELECT nextval('shipments_shipment_id_seq')`);
-            console.log('Advanced shipments sequence, retrying...');
             continue;
-          } catch (seqError) {
-            console.error('Error advancing sequence:', seqError);
-          }
-          
+          } catch (seqError) {}
           if (attempts >= maxRetries) {
             return res.status(500).json({ 
-              message: `Unable to create shipment after ${maxRetries} attempts. Please contact support.`,
+              message: `Unable to create shipment after ${maxRetries} attempts.`,
               error: 'ID generation failed'
             });
           }
@@ -123,10 +117,7 @@ export class ShipmentsController {
           });
         }
         
-        return res.status(500).json({ 
-          message: 'Error creating shipment', 
-          error: error.message 
-        });
+        return res.status(500).json({ message: 'Error creating shipment', error: error.message });
       }
     }
   };
@@ -151,10 +142,7 @@ export class ShipmentsController {
 
       return res.status(200).json({ shipments });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching shipments', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching shipments', error: error.message });
     }
   };
 
@@ -192,10 +180,7 @@ export class ShipmentsController {
 
       return res.status(200).json({ shipment });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching shipment', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching shipment', error: error.message });
     }
   };
 
@@ -234,10 +219,7 @@ export class ShipmentsController {
 
       return res.status(200).json({ shipment });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching shipment', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching shipment', error: error.message });
     }
   };
 
@@ -287,15 +269,10 @@ export class ShipmentsController {
           orderStatus = 'processing';
         }
 
-        const orderIdToUpdate = shipment.order_id || shipment.dataValues?.order_id;
-        console.log(`Attempting to update order ${orderIdToUpdate} to status: ${orderStatus}`);
-
-        const [updateCount] = await db.Order.update(
+        await db.Order.update(
           { orderStatus: orderStatus },
-          { where: { order_id: orderIdToUpdate } }
+          { where: { order_id: shipment.order_id } }
         );
-        
-        console.log(`Updated ${updateCount} order(s). Order ${orderIdToUpdate} orderStatus changed to: ${orderStatus}`);
       }
 
       const updatedShipment = await db.Shipment.findByPk(id, {
@@ -319,10 +296,7 @@ export class ShipmentsController {
         shipment: updatedShipment
       });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error updating shipment', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error updating shipment', error: error.message });
     }
   };
 
@@ -351,15 +325,11 @@ export class ShipmentsController {
       }
 
       await shipment.order.update({ orderStatus: 'processing' });
-
       await shipment.destroy();
 
       return res.status(200).json({ message: 'Shipment deleted successfully' });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error deleting shipment', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error deleting shipment', error: error.message });
     }
   };
 }

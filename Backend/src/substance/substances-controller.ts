@@ -1,10 +1,10 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth-middleware';
-import { getImageUrl } from '../file-upload/upload-middleware';
-import { deleteImageById } from '../file-upload/upload-middleware';
-const db = require('../../models');
+import { AuthRequest } from '../auth/auth-middleware';
+import { getImageUrl, deleteImageById } from '../file-upload/upload-middleware';
 
-export class SubstancesController {
+import db from '../../models';
+
+export class SubstanceController {
   static create = async (req: AuthRequest, res: Response) => {
     const maxRetries = 20;
     let attempts = 0;
@@ -39,48 +39,36 @@ export class SubstancesController {
           substance
         });
       } catch (error: any) {
-        console.error(`Error creating substance (attempt ${attempts + 1}):`, error.message);
-        
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
-          
           try {
             await db.sequelize.query(`SELECT nextval('substances_substance_id_seq')`);
-            console.log('Advanced substances sequence, retrying...');
             continue;
-          } catch (seqError) {
-            console.error('Error advancing sequence:', seqError);
-          }
-          
+          } catch (seqError) {}
           if (attempts >= maxRetries) {
             return res.status(500).json({ 
-              message: `Unable to create substance after ${maxRetries} attempts. Please contact support.`,
+              message: `Unable to create substance after ${maxRetries} attempts.`,
               error: 'ID generation failed'
             });
           }
           continue;
         }
-        
-        return res.status(500).json({ 
-          message: 'Error creating substance', 
-          error: error.message 
-        });
+        return res.status(500).json({ message: 'Error creating substance', error: error.message });
       }
     }
   };
 
   static getAll = async (req: AuthRequest, res: Response) => {
-  try {
-    const substances = await db.Substance.findAll({
-      include: [{
-        model: db.Provider,
-        as: 'provider',
-        attributes: { exclude: ['password'] }
-      }]
-    });
+    try {
+      const substances = await db.Substance.findAll({
+        include: [{
+          model: db.Provider,
+          as: 'provider',
+          attributes: { exclude: ['password'] }
+        }]
+      });
 
-   
       const substancesWithImages = substances.map((substance: any) => {
         const substanceData = substance.toJSON();
         return {
@@ -91,10 +79,7 @@ export class SubstancesController {
 
       return res.status(200).json({ substances: substancesWithImages });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching substances', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching substances', error: error.message });
     }
   };
 
@@ -116,16 +101,13 @@ export class SubstancesController {
 
       const substanceData = substance.toJSON();
       const substanceWithImage = {
-      ...substanceData,
-      image_url: getImageUrl('substance', parseInt(id))
-    };
+        ...substanceData,
+        image_url: getImageUrl('substance', parseInt(id))
+      };
 
       return res.status(200).json({ substance: substanceWithImage });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error fetching substance', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error fetching substance', error: error.message });
     }
   };
 
@@ -150,36 +132,29 @@ export class SubstancesController {
         substance
       });
     } catch (error: any) {
-      return res.status(500).json({ 
-        message: 'Error updating substance', 
-        error: error.message 
-      });
+      return res.status(500).json({ message: 'Error updating substance', error: error.message });
     }
   };
 
   static delete = async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const substance = await db.Substance.findByPk(id);
+    try {
+      const { id } = req.params;
+      const substance = await db.Substance.findByPk(id);
 
-    if (!substance) {
-      return res.status(404).json({ message: 'Substance not found' });
+      if (!substance) {
+        return res.status(404).json({ message: 'Substance not found' });
+      }
+
+      if (req.user?.type === 'provider' && substance.provider_id !== req.user.id) {
+        return res.status(403).json({ message: 'Cannot delete other providers substances' });
+      }
+
+      deleteImageById('substance', parseInt(id));
+      await substance.destroy();
+
+      return res.status(200).json({ message: 'Substance deleted successfully' });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Error deleting substance', error: error.message });
     }
-
-    if (req.user?.type === 'provider' && substance.provider_id !== req.user.id) {
-      return res.status(403).json({ message: 'Cannot delete other providers substances' });
-    }
-
-    deleteImageById('substance', parseInt(id));
-
-    await substance.destroy();
-
-    return res.status(200).json({ message: 'Substance deleted successfully' });
-  } catch (error: any) {
-    return res.status(500).json({ 
-      message: 'Error deleting substance', 
-      error: error.message 
-    });
-  }
-};
+  };
 }
