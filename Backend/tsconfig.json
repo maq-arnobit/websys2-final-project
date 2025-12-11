@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "./dist",
-    "rootDir": "./src",  // Changed this!
+    "rootDir": "./",
     "resolveJsonModule": true
   },
   "include": [
