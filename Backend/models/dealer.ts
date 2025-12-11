@@ -1,5 +1,5 @@
 'use strict';
-import { Model,DataTypes,Optional } from 'sequelize';
+import { Model,DataTypes } from 'sequelize';
 
 export default (sequelize: any, DataTypes: any) => {
   class Dealer extends Model {
