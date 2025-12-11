@@ -1,16 +1,17 @@
 {
   "name": "express-ts",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "migrate": "ts-node ./node_modules/.bin/typeorm migration:run",
-    "seed": "ts-node ./src/seeds/seed.ts",
-    "test": "jest --verbose",
-    "dev": "nodemon",
+    "migrate": "node --loader ts-node/esm ./node_modules/.bin/typeorm migration:run",
+    "seed": "node --loader ts-node/esm ./src/seeds/seed.ts",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose",
+    "dev": "nodemon --exec 'node --loader ts-node/esm' src/index.ts",
     "build": "tsc && cp -r models dist/ && cp -r config dist/ && cp -r migrations dist/ && cp -r seeders dist/",
     "start": "node dist/src/index.js"
   },
@@ -24,7 +25,6 @@
     "express": "^4.21.2",
     "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.3",
-    "loader": "^2.1.1",
     "multer": "^2.0.2",
     "mysql2": "^3.15.3",
     "passport": "^0.7.0",

@@ -7,15 +7,11 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",  // Changed this!
     "resolveJsonModule": true
   },
   "include": [
-    "src/**/*", 
-    "config/**/*", 
-    "models/**/*", 
-    "migrations/**/*", 
-    "seeders/**/*"
+    "src/**/*"
   ],
   "exclude": ["node_modules"]
 }
