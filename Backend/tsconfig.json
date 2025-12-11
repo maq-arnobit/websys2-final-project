@@ -1,12 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "commonjs",
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
     "strict": false,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "outDir": "./dist",
-    "rootDir": "./"
+    "rootDir": "./",
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*", "config/**/*", "models/**/*", "migrations/**/*", "seeders/**/*"],
+  "include": [
+    "src/**/*", 
+    "config/**/*", 
+    "models/**/*", 
+    "migrations/**/*", 
+    "seeders/**/*"
+  ],
   "exclude": ["node_modules"]
 }

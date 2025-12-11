@@ -1,6 +1,11 @@
 import { Sequelize, DataTypes } from "sequelize";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+// Fix for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const sequelize = new Sequelize(
   "postgres",
@@ -26,7 +31,7 @@ fs.readdirSync(__dirname)
   .filter(file => {
     return (
       file !== basename &&
-      (file.endsWith(".js") || file.endsWith(".ts")) && 
+      (file.endsWith(".js") || file.endsWith(".ts")) &&
       !file.endsWith(".d.ts") &&
       !file.endsWith(".map")
     );
@@ -34,7 +39,7 @@ fs.readdirSync(__dirname)
   .forEach(file => {
     const modelPath = path.join(__dirname, file);
 
-    // 🔥 FIX #1 — always require default export first
+    // CJS fallback
     const modelModule = require(modelPath);
     const modelFactory = modelModule.default || modelModule;
 
@@ -43,13 +48,11 @@ fs.readdirSync(__dirname)
       return;
     }
 
-    // 🔥 FIX #2 — ensure .name is correct by using modelFactory(sequelize).name
     const model = modelFactory(sequelize, DataTypes);
-
     db[model.name] = model;
   });
 
-// Run Associations after all models loaded
+// Run associations
 Object.keys(db).forEach(modelName => {
   if (typeof db[modelName].associate === "function") {
     db[modelName].associate(db);

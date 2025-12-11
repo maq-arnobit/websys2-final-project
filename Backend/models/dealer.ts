@@ -1,6 +1,6 @@
-import { Model, Sequelize, DataTypes } from 'sequelize';
+import { Model} from 'sequelize';
 
-export default (sequelize: Sequelize) => {
+export default (sequelize: any, DataTypes: any) => {
   class Dealer extends Model {
     static associate(models: any) {
       this.hasMany(models.Order, {
