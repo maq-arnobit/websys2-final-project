@@ -1,186 +1,495 @@
-import app from '../index';
 import request from 'supertest';
-import { comparePassword, hashPassword } from '../utils/utils';
-import { compare } from 'bcrypt';
-import { authenticate, deleteSession } from '../middleware/auth-middleware';
-const db = require('../../models');
+import express from 'express';
+import dealersRoutes from './dealers-routes';
 
-jest.mock('../../models');
-jest.mock('../utils/utils', () =>  ({
-    hashPassword: jest.fn().mockResolvedValue('hashed123'),
-    comparePassword: jest.fn()
+// Mock dependencies
+jest.mock('../../models', () => ({
+  Dealer: {
+    findByPk: jest.fn(),
+    create: jest.fn()
+  },
+  Inventory: {
+    findAll: jest.fn()
+  },
+  Order: {
+    findAll: jest.fn()
+  },
+  PurchaseOrder: {
+    findAll: jest.fn()
+  },
+  Customer: {},
+  OrderItem: {},
+  Substance: {},
+  Provider: {},
+  Shipment: {},
+  sequelize: {
+    query: jest.fn()
+  }
 }));
-jest.mock('../middleware/auth-middleware', () => ({
-    createSession: jest.fn().mockResolvedValue('session123'),
-    deleteSession: jest.fn(),
-    authenticate: jest.fn(() => (req,res,next) => {
-        req.user = {id:1 ,type: 'dealer'};
-        next();
-    }),
-    AuthRequest: jest.requireActual("../middleware/auth-middleware").AuthRequest
+
+jest.mock('../utils/utils', () => ({
+  hashPassword: jest.fn().mockResolvedValue('hashed_password'),
+  comparePassword: jest.fn()
 }));
 
-let consoleSpyError: jest.SpyInstance;
+// Mock auth middleware
+jest.mock('../auth/auth-middleware', () => ({
+  authenticate: (allowedTypes: string[]) => {
+    return (req: any, res: any, next: any) => {
+      if (!req.user || !allowedTypes.includes(req.user.type)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      next();
+    };
+  }
+}));
 
-beforeEach(() => {
-    consoleSpyError = jest.spyOn(console,'error').mockImplementation(() => {});
+describe('Dealer Routes Integration Tests', () => {
+  let app: any;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use('api/', dealersRoutes);
     jest.clearAllMocks();
-})
-afterEach(() => {
-    consoleSpyError.mockRestore();
-    jest.restoreAllMocks();
-})
+  });
 
-describe("Dealer Controller", () => {
+  describe('GET /dealers/:id', () => {
+    test('should return dealer profile when authenticated', async () => {
+      const mockDealer = {
+        dealer_id: 1,
+        username: 'testdealer',
+        email: 'dealer@example.com',
+        rating: 4.5
+      };
 
-    describe("Dealer Inventory", () => { 
- const mockInventory = [
-  {
-    inventory_id: 1,
-    dealer_id: 10,
-    substance_id: 5,
-    quantity: 50,
-    image_url: "http://example.com/inventory/1.jpg", // placeholder URL
-    substance: {
-      substance_id: 5,
-      name: "Premium Coffee",
-      category: "Beverage",
-      description: "High-quality roasted beans",
-      image_url: "http://example.com/substance/5.jpg", // placeholder URL
-      provider: {
-        provider_id: 3,
-        username: "providerA",
-        businessName: "Substance Source Co.",
-        email: "providerA@gmail.com",
-        status: "active"
-      }
-    }
-  },
-  {
-    inventory_id: 2,
-    dealer_id: 10,
-    substance_id: 7,
-    quantity: 20,
-    image_url: "http://example.com/inventory/2.jpg",
-    substance: {
-      substance_id: 7,
-      name: "Organic Tea",
-      category: "Beverage",
-      description: "Imported green tea leaves",
-      image_url: "http://example.com/substance/7.jpg",
-      provider: {
-        provider_id: 4,
-        username: "providerB",
-        businessName: "Tea Masters Inc.",
-        email: "providerB@gmail.com",
-        status: "active"
-      }
-    }
-  }
-];
+      const { Dealer } = require('../../models');
+      Dealer.findByPk.mockResolvedValue(mockDealer);
 
-        it("Should get Dealer Inventory", async () => {
-        (db.Inventory.findAll as jest.Mock).mockResolvedValue(mockInventory);
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
 
-        const response = await request(app).get('/api/dealers/1/inventory')
+      const response = await request(authedApp)
+        .get('/dealers/1');
 
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({inventory: mockInventory});
+      expect(response.status).toBe(200);
+      expect(response.body.dealer).toEqual(mockDealer);
     });
-    })
-    describe("Dealer Order", () => {
-        const mockOrders = [
-  {
-    order_id: 1,
-    dealer_id: 10,
-    customer: {
-      customer_id: 100,
-      username: "john_doe",
-      email: "john@example.com"
-    },
-    items: [
-      {
-        order_item_id: 1,
-        order_id: 1,
-        quantity: 2,
-        price: 499.5,
-        substance: {
+
+    test('should return 403 for non-dealer users', async () => {
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'customer' }; // Wrong user type
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1');
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Access denied');
+    });
+
+    test('should return 403 when accessing other dealer profile', async () => {
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 2, type: 'dealer' }; // Different dealer ID
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1');
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Cannot access other profiles');
+    });
+  });
+
+  describe('GET /dealers/:id/inventory', () => {
+    test('should get dealer inventory successfully', async () => {
+      const mockInventory = [
+        {
+          inventory_id: 1,
+          dealer_id: 1,
           substance_id: 5,
-          name: "Premium Coffee",
-          category: "Beverage",
-          description: "High-quality roasted beans"
+          quantity: 50,
+          substance: {
+            substance_id: 5,
+            name: 'Premium Coffee',
+            provider: {
+              provider_id: 3,
+              businessName: 'Substance Source Co.'
+            }
+          }
         }
-      },
-      {
-        order_item_id: 2,
-        order_id: 1,
-        quantity: 1,
-        price: 299.0,
-        substance: {
-          substance_id: 6,
-          name: "Dark Chocolate",
-          category: "Snack",
-          description: "Rich and bitter"
-        }
-      }
-    ],
-    shipment: {
-      shipment_id: 50,
-      order_id: 1,
-      tracking_number: "TRACK123456",
-      status: "delivered",
-      carrier: "LBC Express"
-    },
-    total_price: 1298.5,
-    status: "delivered",
-    toJSON: jest.fn().mockReturnThis() // Important for your controller
-  },
-  {
-    order_id: 2,
-    dealer_id: 10,
-    customer: {
-      customer_id: 101,
-      username: "jane_doe",
-      email: "jane@example.com"
-    },
-    items: [
-      {
-        order_item_id: 3,
-        order_id: 2,
-        quantity: 3,
-        price: 150.0,
-        substance: {
-          substance_id: 7,
-          name: "Organic Tea",
-          category: "Beverage",
-          description: "Imported green tea leaves"
-        }
-      }
-    ],
-    shipment: {
-      shipment_id: 51,
-      order_id: 2,
-      tracking_number: "TRACK654321",
-      status: "in transit",
-      carrier: "J&T Express"
-    },
-    total_price: 450.0,
-    status: "processing",
-    toJSON: jest.fn().mockReturnThis()
-  }
-];
-        it("Should get Dealer Orders", async () => {
-            (db.Order.findAll as jest.Mock).mockResolvedValue(mockOrders);
+      ];
 
-            const response = await request(app).get('./api/dealers/1/orders')
+      const { Inventory } = require('../../models');
+      Inventory.findAll.mockResolvedValue(mockInventory);
 
-            expect(response.status).toBe(200);
-            expect(response.body).toEqual({inventory: mockOrders});
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/inventory');
+
+      expect(response.status).toBe(200);
+      expect(response.body.inventory).toEqual(mockInventory);
+      expect(Inventory.findAll).toHaveBeenCalledWith({
+        where: { dealer_id: 1 },
+        include: [
+          {
+            model: expect.anything(),
+            as: 'substance',
+            include: [
+              {
+                model: expect.anything(),
+                as: 'provider',
+                attributes: { exclude: ['password'] }
+              }
+            ]
+          }
+        ]
+      });
     });
-})
-    describe("Dealer Purchase Orders", () => {
-        it("Should get Dealer Purchase Order", async () => {
 
+    test('should return empty array when no inventory', async () => {
+      const { Inventory } = require('../../models');
+      Inventory.findAll.mockResolvedValue([]);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/inventory');
+
+      expect(response.status).toBe(200);
+      expect(response.body.inventory).toEqual([]);
     });
-    })
-})
+
+    test('should return 403 when accessing other dealer inventory', async () => {
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 2, type: 'dealer' }; // Different dealer
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/inventory');
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Cannot access other inventory');
+    });
+  });
+
+  describe('GET /dealers/:id/orders', () => {
+    test('should get dealer orders successfully', async () => {
+      const mockOrders = [
+        {
+          order_id: 1,
+          dealer_id: 1,
+          customer: {
+            customer_id: 100,
+            username: 'john_doe'
+          },
+          items: [
+            {
+              substance: {
+                name: 'Premium Coffee'
+              }
+            }
+          ],
+          shipment: {
+            tracking_number: 'TRACK123456'
+          }
+        }
+      ];
+
+      const { Order } = require('../../models');
+      Order.findAll.mockResolvedValue(mockOrders);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/orders');
+
+      expect(response.status).toBe(200);
+      expect(response.body.orders).toEqual(mockOrders);
+      expect(Order.findAll).toHaveBeenCalledWith({
+        where: { dealer_id: 1 },
+        include: [
+          {
+            model: expect.anything(),
+            as: 'customer',
+            attributes: { exclude: ['password'] }
+          },
+          {
+            model: expect.anything(),
+            as: 'items',
+            include: [
+              {
+                model: expect.anything(),
+                as: 'substance'
+              }
+            ]
+          },
+          {
+            model: expect.anything(),
+            as: 'shipment'
+          }
+        ]
+      });
+    });
+
+    test('should return 403 when accessing other dealer orders', async () => {
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 2, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/orders');
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Cannot access other orders');
+    });
+  });
+
+  describe('GET /dealers/:id/purchase-orders', () => {
+    test('should get dealer purchase orders successfully', async () => {
+      const mockPurchaseOrders = [
+        {
+          purchase_order_id: 1,
+          dealer_id: 1,
+          provider: {
+            provider_id: 3,
+            businessName: 'Test Provider'
+          },
+          items: [
+            {
+              substance: {
+                name: 'Test Substance'
+              }
+            }
+          ]
+        }
+      ];
+
+      const { PurchaseOrder } = require('../../models');
+      PurchaseOrder.findAll.mockResolvedValue(mockPurchaseOrders);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/purchase-orders');
+
+      expect(response.status).toBe(200);
+      expect(response.body.purchaseOrders).toEqual(mockPurchaseOrders);
+      expect(PurchaseOrder.findAll).toHaveBeenCalledWith({
+        where: { dealer_id: 1 },
+        include: [
+          {
+            model: expect.anything(),
+            as: 'provider',
+            attributes: { exclude: ['password'] }
+          },
+          {
+            model: expect.anything(),
+            as: 'items',
+            include: [
+              {
+                model: expect.anything(),
+                as: 'substance'
+              }
+            ]
+          }
+        ]
+      });
+    });
+
+    test('should return empty array when no purchase orders', async () => {
+      const { PurchaseOrder } = require('../../models');
+      PurchaseOrder.findAll.mockResolvedValue([]);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1/purchase-orders');
+
+      expect(response.status).toBe(200);
+      expect(response.body.purchaseOrders).toEqual([]);
+    });
+  });
+
+  describe('PUT /dealers/:id', () => {
+    test('should update dealer successfully', async () => {
+      const mockDealer = {
+        update: jest.fn().mockResolvedValue(true),
+        dealer_id: 1
+      };
+      const updatedDealer = {
+        dealer_id: 1,
+        username: 'updateddealer',
+        email: 'updated@example.com'
+      };
+
+      const { Dealer } = require('../../models');
+      Dealer.findByPk
+        .mockResolvedValueOnce(mockDealer)
+        .mockResolvedValueOnce(updatedDealer);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .put('/dealers/1')
+        .send({ username: 'updateddealer', email: 'updated@example.com' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Dealer updated successfully');
+    });
+
+    test('should handle password update', async () => {
+      const mockDealer = {
+        update: jest.fn().mockResolvedValue(true),
+        dealer_id: 1
+      };
+      const updatedDealer = { dealer_id: 1 };
+
+      const { Dealer } = require('../../models');
+      Dealer.findByPk
+        .mockResolvedValueOnce(mockDealer)
+        .mockResolvedValueOnce(updatedDealer);
+
+      const { hashPassword } = require('../utils/utils');
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .put('/dealers/1')
+        .send({ password: 'newpassword123' });
+
+      expect(response.status).toBe(200);
+      expect(hashPassword).toHaveBeenCalledWith('newpassword123');
+    });
+  });
+
+  describe('DELETE /dealers/:id', () => {
+    test('should delete dealer successfully', async () => {
+      const mockDealer = {
+        destroy: jest.fn().mockResolvedValue(true)
+      };
+
+      const { Dealer } = require('../../models');
+      Dealer.findByPk.mockResolvedValue(mockDealer);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .delete('/dealers/1');
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Dealer account deleted successfully');
+    });
+
+    test('should return 404 when dealer not found', async () => {
+      const { Dealer } = require('../../models');
+      Dealer.findByPk.mockResolvedValue(null);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .delete('/dealers/1');
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe('Dealer not found');
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle database errors', async () => {
+      const { Dealer } = require('../../models');
+      const error = new Error('Database connection failed');
+      Dealer.findByPk.mockRejectedValue(error);
+
+      const authedApp = express();
+      authedApp.use(express.json());
+      authedApp.use((req: any, res, next) => {
+        req.user = { id: 1, type: 'dealer' };
+        next();
+      });
+      authedApp.use('/dealers', dealersRoutes);
+
+      const response = await request(authedApp)
+        .get('/dealers/1');
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toBe('Error fetching dealer');
+    });
+  });
+});

@@ -19,7 +19,7 @@ const app = express();
 
 // Cookie
 app.use(cors({
-  origin: process.env.APP_URL || 'http://localhost:3000',
+  origin: process.env.APP_URL || 'http://localhost:5173',
   credentials: true, 
 }));
 

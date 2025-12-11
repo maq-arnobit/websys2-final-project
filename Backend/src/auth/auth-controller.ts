@@ -79,7 +79,6 @@ export class AuthController {
 
         return res.status(201).json({
           message: `${userType.charAt(0).toUpperCase() + userType.slice(1)} registered successfully`,
-          [userType]: sanitizedUser
         });
       } catch (error: any) {
         if ((error.code === '23505' || error.parent?.code === '23505') && 
