@@ -1,10 +1,9 @@
 'use strict';
+import { QueryInterface } from 'sequelize';
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.bulkInsert('orders', [
+export async function up(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.bulkInsert('orders', [
       {
-        order_id: 1,
         customer_id: 1,
         dealer_id: 1,
         orderDate: new Date('2024-10-15 10:30:00'),
@@ -17,7 +16,6 @@ module.exports = {
         paymentDate: new Date('2024-10-15 10:30:00')
       },
       {
-        order_id: 2,
         customer_id: 2,
         dealer_id: 1,
         orderDate: new Date('2024-10-18 14:20:00'),
@@ -30,72 +28,6 @@ module.exports = {
         paymentDate: new Date('2024-10-18 14:20:00')
       },
       {
-        order_id: 3,
-        customer_id: 3,
-        dealer_id: 2,
-        orderDate: new Date('2024-10-22 09:15:00'),
-        orderStatus: 'delivered',
-        totalAmount: 220.00,
-        shippingCost: 20.00,
-        deliveryAddress: '789 Pine Rd, Chicago, IL 60601',
-        paymentStatus: 'paid',
-        paymentMethod: 'Credit Card',
-        paymentDate: new Date('2024-10-22 09:15:00')
-      },
-      {
-        order_id: 4,
-        customer_id: 1,
-        dealer_id: 2,
-        orderDate: new Date('2024-11-01 11:45:00'),
-        orderStatus: 'shipped',
-        totalAmount: 168.75,
-        shippingCost: 18.00,
-        deliveryAddress: '123 Main St, New York, NY 10001',
-        paymentStatus: 'paid',
-        paymentMethod: 'Credit Card',
-        paymentDate: new Date('2024-11-01 11:45:00')
-      },
-      {
-        order_id: 5,
-        customer_id: 5,
-        dealer_id: 3,
-        orderDate: new Date('2024-11-05 16:30:00'),
-        orderStatus: 'delivered',
-        totalAmount: 95.00,
-        shippingCost: 8.00,
-        deliveryAddress: '654 Maple Dr, Phoenix, AZ 85001',
-        paymentStatus: 'paid',
-        paymentMethod: 'PayPal',
-        paymentDate: new Date('2024-11-05 16:30:00')
-      },
-      {
-        order_id: 6,
-        customer_id: 6,
-        dealer_id: 3,
-        orderDate: new Date('2024-11-08 13:00:00'),
-        orderStatus: 'processing',
-        totalAmount: 142.50,
-        shippingCost: 12.00,
-        deliveryAddress: '987 Cedar Ln, Philadelphia, PA 19019',
-        paymentStatus: 'paid',
-        paymentMethod: 'Credit Card',
-        paymentDate: new Date('2024-11-08 13:00:00')
-      },
-      {
-        order_id: 7,
-        customer_id: 7,
-        dealer_id: 5,
-        orderDate: new Date('2024-11-10 10:00:00'),
-        orderStatus: 'shipped',
-        totalAmount: 210.00,
-        shippingCost: 15.00,
-        deliveryAddress: '147 Birch St, San Antonio, TX 78201',
-        paymentStatus: 'paid',
-        paymentMethod: 'Bank Transfer',
-        paymentDate: new Date('2024-11-10 10:00:00')
-      },
-      {
-        order_id: 8,
         customer_id: 9,
         dealer_id: 5,
         orderDate: new Date('2024-11-12 15:20:00'),
@@ -108,7 +40,6 @@ module.exports = {
         paymentDate: new Date('2024-11-12 15:20:00')
       },
       {
-        order_id: 9,
         customer_id: 10,
         dealer_id: 6,
         orderDate: new Date('2024-11-15 12:30:00'),
@@ -118,10 +49,9 @@ module.exports = {
         deliveryAddress: '741 Ash Dr, San Jose, CA 95101',
         paymentStatus: 'pending',
         paymentMethod: 'Cash on Delivery',
-        paymentDate: new Date('2024-11-15 12:30:00')
+        paymentDate: null // pending payment has no date yet
       },
       {
-        order_id: 10,
         customer_id: 2,
         dealer_id: 6,
         orderDate: new Date('2024-11-18 09:45:00'),
@@ -134,7 +64,6 @@ module.exports = {
         paymentDate: new Date('2024-11-18 09:45:00')
       },
       {
-        order_id: 11,
         customer_id: 3,
         dealer_id: 1,
         orderDate: new Date('2024-11-19 14:00:00'),
@@ -147,7 +76,6 @@ module.exports = {
         paymentDate: new Date('2024-11-19 14:00:00')
       },
       {
-        order_id: 12,
         customer_id: 5,
         dealer_id: 2,
         orderDate: new Date('2024-11-20 11:15:00'),
@@ -160,7 +88,6 @@ module.exports = {
         paymentDate: new Date('2024-11-20 11:15:00')
       },
       {
-        order_id: 13,
         customer_id: 8,
         dealer_id: 4,
         orderDate: new Date('2024-11-21 16:45:00'),
@@ -173,7 +100,6 @@ module.exports = {
         paymentDate: new Date('2024-11-21 16:45:00')
       },
       {
-        order_id: 14,
         customer_id: 4,
         dealer_id: 4,
         orderDate: new Date('2024-11-22 08:30:00'),
@@ -186,7 +112,6 @@ module.exports = {
         paymentDate: new Date('2024-11-22 08:30:00')
       },
       {
-        order_id: 15,
         customer_id: 7,
         dealer_id: 1,
         orderDate: new Date('2024-11-23 17:20:00'),
@@ -199,7 +124,6 @@ module.exports = {
         paymentDate: new Date('2024-11-23 17:20:00')
       },
       {
-        order_id: 16,
         customer_id: 9,
         dealer_id: 3,
         orderDate: new Date('2024-11-24 13:10:00'),
@@ -212,7 +136,6 @@ module.exports = {
         paymentDate: new Date('2024-11-24 13:10:00')
       },
       {
-        order_id: 17,
         customer_id: 10,
         dealer_id: 5,
         orderDate: new Date('2024-11-25 10:50:00'),
@@ -225,7 +148,6 @@ module.exports = {
         paymentDate: new Date('2024-11-25 10:50:00')
       },
       {
-        order_id: 18,
         customer_id: 2,
         dealer_id: 2,
         orderDate: new Date('2024-11-26 14:15:00'),
@@ -238,7 +160,6 @@ module.exports = {
         paymentDate: new Date('2024-11-26 14:15:00')
       },
       {
-        order_id: 19,
         customer_id: 6,
         dealer_id: 6,
         orderDate: new Date('2024-11-27 11:25:00'),
@@ -251,7 +172,6 @@ module.exports = {
         paymentDate: new Date('2024-11-27 11:25:00')
       },
       {
-        order_id: 20,
         customer_id: 1,
         dealer_id: 6,
         orderDate: new Date('2024-11-28 09:40:00'),
@@ -264,9 +184,8 @@ module.exports = {
         paymentDate: new Date('2024-11-28 09:40:00')
       }
     ], {});
-  },
-
-  async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('orders', null, {});
   }
-};
+
+ export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.bulkDelete('orders', {}, {});
+}

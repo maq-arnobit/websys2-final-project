@@ -1,35 +1,34 @@
 'use strict';
+import { QueryInterface, DataTypes } from 'sequelize';
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('shipments', {
-      shipment_id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+export async function up(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.createTable('shipments', {
+    shipment_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    order_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      unique: true,
+      references: {
+        model: 'orders',
+        key: 'order_id',
       },
-      order_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        unique: true,
-        references: {
-          model: 'orders',
-          key: 'order_id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
-      },
-      carrier: {
-        type: Sequelize.STRING
-      },
-      status: {
-        type: Sequelize.ENUM('preparing', 'in_transit', 'delivered', 'failed'),
-        defaultValue: 'preparing'
-      }
-    });
-  },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    carrier: {
+      type: DataTypes.STRING,
+    },
+    status: {
+      type: DataTypes.ENUM('preparing', 'in_transit', 'delivered', 'failed'),
+      defaultValue: 'preparing',
+    },
+  });
+}
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('shipments');
-  }
-};
+export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.dropTable('shipments');
+}

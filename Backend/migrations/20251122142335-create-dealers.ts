@@ -1,42 +1,45 @@
 'use strict';
+import { QueryInterface, DataTypes } from 'sequelize';
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('dealers', {
-      dealer_id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+export async function up(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.createTable('dealers', {
+    dealer_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    warehouse: {
+      type: DataTypes.STRING,
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive', 'suspended'),
+      defaultValue: 'active',
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    rating: {
+      type: DataTypes.DECIMAL(3, 2),
+      defaultValue: 0.0,
+      validate: {
+        min: 0,
+        max: 5,
       },
-      username: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true
-      },
-      password: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      warehouse: {
-        type: Sequelize.STRING
-      },
-      status: {
-        type: Sequelize.ENUM('active', 'inactive', 'suspended'),
-        defaultValue: 'active'
-      },
-      email: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true
-      },
-      rating: {
-        type: Sequelize.DECIMAL(3, 2),
-        defaultValue: 0.00
-      }
-    });
-  },
+    },
+  });
+}
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('dealers');
-  }
-};
+export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.dropTable('dealers');
+}

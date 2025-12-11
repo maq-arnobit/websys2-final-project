@@ -1,39 +1,38 @@
 'use strict';
+import { QueryInterface, DataTypes } from 'sequelize';
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('provider_transports', {
-      providerTransport_id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+export async function up(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.createTable('provider_transports', {
+    providerTransport_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    provider_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'providers',
+        key: 'provider_id',
       },
-      provider_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'providers',
-          key: 'provider_id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
-      },
-      transportMethod: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      transportCost: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false
-      },
-      costPerKG: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false
-      }
-    });
-  },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    transportMethod: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    transportCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    costPerKG: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+  });
+}
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('provider_transports');
-  }
-};
+export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.dropTable('provider_transports');
+}
