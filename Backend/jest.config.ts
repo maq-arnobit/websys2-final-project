@@ -13,11 +13,11 @@ export default {
       outputPath: "tests-report.html"
     }]
   ],
-  collectCoverage: true,
-  coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
-  collectCoverageFrom: [
-    "src/**/*.{js,ts,jsx,tsx}",
-    "!src/**/*.d.ts"
-  ],
+  // collectCoverage: true,
+  // coverageDirectory: "coverage",
+  // coverageReporters: ["text", "lcov", "html"],
+  // collectCoverageFrom: [
+  //   "src/**/*.{js,ts,jsx,tsx}",
+  //   "!src/**/*.d.ts"
+  // ],
 };
