@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { comparePassword } from '../utils/utils';
-import db from '../../../models'; 
+import db from '../../models'; 
 
 interface ModelConfig {
   model: any;
