@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import passport from '../passport/passport';
+import passport from '../index';
 import { hashPassword } from '../utils/utils';
 import { AuthRequest } from './auth-middleware';
 
