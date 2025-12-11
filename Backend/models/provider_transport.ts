@@ -1,48 +1,52 @@
 'use strict';
-const  Model  = require('sequelize');
+import { Model } from 'sequelize';
 
 export default (sequelize: any, DataTypes: any) => {
   class ProviderTransport extends Model {
-    static associate(models) {
+    static associate(models: any) {
       this.belongsTo(models.Provider, {
         foreignKey: 'provider_id',
-        as: 'provider'
+        as: 'provider',
       });
+
       this.hasMany(models.PurchaseOrder, {
         foreignKey: 'providerTransport_id',
-        as: 'purchaseOrders'
+        as: 'purchaseOrders',
       });
     }
   }
-  
-  ProviderTransport.init({
-    providerTransport_id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+
+  ProviderTransport.init(
+    {
+      providerTransport_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      provider_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      transportMethod: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      transportCost: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+      costPerKG: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
     },
-    provider_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    transportMethod: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    transportCost: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
-    },
-    costPerKG: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
+    {
+      sequelize,
+      modelName: 'ProviderTransport',
+      tableName: 'provider_transports',
+      timestamps: false,
     }
-  }, {
-    sequelize,
-    modelName: 'ProviderTransport',
-    tableName: 'provider_transports',
-    timestamps: false
-  });
-  
+  );
+
   return ProviderTransport;
 };

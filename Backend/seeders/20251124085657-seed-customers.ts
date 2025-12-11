@@ -1,10 +1,9 @@
 'use strict';
+import { QueryInterface } from 'sequelize';
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.bulkInsert('customers', [
+export async function up(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.bulkInsert('customers', [
       {
-        customer_id: 1,
         username: 'john_doe',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'john@example.com',
@@ -12,7 +11,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 2,
         username: 'jane_smith',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'jane@example.com',
@@ -20,7 +18,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 3,
         username: 'bob_wilson',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'bob@example.com',
@@ -28,7 +25,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 4,
         username: 'alice_brown',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'alice@example.com',
@@ -36,7 +32,6 @@ module.exports = {
         status: 'inactive'
       },
       {
-        customer_id: 5,
         username: 'charlie_davis',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'charlie@example.com',
@@ -44,7 +39,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 6,
         username: 'emma_johnson',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'emma@example.com',
@@ -52,7 +46,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 7,
         username: 'david_martinez',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'david@example.com',
@@ -60,7 +53,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 8,
         username: 'sophia_garcia',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'sophia@example.com',
@@ -68,7 +60,6 @@ module.exports = {
         status: 'suspended'
       },
       {
-        customer_id: 9,
         username: 'michael_lee',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'michael@example.com',
@@ -76,7 +67,6 @@ module.exports = {
         status: 'active'
       },
       {
-        customer_id: 10,
         username: 'olivia_taylor',
         password: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
         email: 'olivia@example.com',
@@ -84,9 +74,7 @@ module.exports = {
         status: 'active'
       }
     ], {});
-  },
-
-  async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('customers', null, {});
-  }
 };
+  export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.bulkDelete('customers', {}, {});
+}

@@ -1,44 +1,46 @@
 'use strict';
+import { QueryInterface, DataTypes } from 'sequelize';
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('inventories', {
-      inventory_id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+export async function up(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.createTable('inventories', {
+    inventory_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    dealer_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'dealers',
+        key: 'dealer_id',
       },
-      dealer_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'dealers',
-          key: 'dealer_id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    substance_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'substances',
+        key: 'substance_id',
       },
-      substance_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'substances',
-          key: 'substance_id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    quantityAvailable: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        min: 0,
       },
-      quantityAvailable: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0
-      },
-      warehouse: {
-        type: Sequelize.STRING
-      }
-    });
-  },
+    },
+    warehouse: {
+      type: DataTypes.STRING,
+    },
+  });
+}
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('inventories');
-  }
-};
+export async function down(queryInterface: QueryInterface): Promise<void> {
+  await queryInterface.dropTable('inventories');
+}

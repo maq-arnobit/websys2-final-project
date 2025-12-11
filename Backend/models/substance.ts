@@ -1,50 +1,55 @@
 'use strict';
-const  Model  = require('sequelize');
+import { Model } from 'sequelize';
 
 export default (sequelize: any, DataTypes: any) => {
   class Substance extends Model {
-    static associate(models) {
+    static associate(models: any) {
       this.belongsTo(models.Provider, {
         foreignKey: 'provider_id',
-        as: 'provider'
+        as: 'provider',
       });
+
       this.hasMany(models.Inventory, {
         foreignKey: 'substance_id',
-        as: 'inventoryItems'
+        as: 'inventoryItems',
       });
+
       this.hasMany(models.OrderItem, {
         foreignKey: 'substance_id',
-        as: 'orderItems'
+        as: 'orderItems',
       });
     }
   }
-  
-  Substance.init({
-    substance_id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+
+  Substance.init(
+    {
+      substance_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      provider_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      substanceName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      category: {
+        type: DataTypes.STRING,
+      },
+      description: {
+        type: DataTypes.TEXT,
+      },
     },
-    provider_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    substanceName: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    category: {
-      type: DataTypes.STRING
-    },
-    description: {
-      type: DataTypes.TEXT
+    {
+      sequelize,
+      modelName: 'Substance',
+      tableName: 'substances',
+      timestamps: false,
     }
-  }, {
-    sequelize,
-    modelName: 'Substance',
-    tableName: 'substances',
-    timestamps: false
-  });
-  
+  );
+
   return Substance;
 };

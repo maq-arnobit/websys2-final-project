@@ -1,68 +1,72 @@
-'use strict';
-const  Model  = require('sequelize');
+import { Model, Sequelize, DataTypes } from 'sequelize';
 
-export default (sequelize: any, DataTypes: any) => {
+export default (sequelize: Sequelize) => {
   class Dealer extends Model {
-    static associate(models) {
+    static associate(models: any) {
       this.hasMany(models.Order, {
         foreignKey: 'dealer_id',
-        as: 'orders'
+        as: 'orders',
       });
+
       this.hasMany(models.Inventory, {
         foreignKey: 'dealer_id',
-        as: 'inventory'
+        as: 'inventory',
       });
+
       this.hasMany(models.PurchaseOrder, {
         foreignKey: 'dealer_id',
-        as: 'purchaseOrders'
+        as: 'purchaseOrders',
       });
     }
   }
-  
-  Dealer.init({
-    dealer_id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+
+  Dealer.init(
+    {
+      dealer_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      warehouse: {
+        type: DataTypes.STRING,
+      },
+      status: {
+        type: DataTypes.ENUM('active', 'inactive', 'suspended'),
+        defaultValue: 'active',
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+          isEmail: true,
+        },
+      },
+      rating: {
+        type: DataTypes.DECIMAL(3, 2),
+        defaultValue: 0.0,
+        validate: {
+          min: 0,
+          max: 5,
+        },
+      },
     },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true
-    },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    warehouse: {
-      type: DataTypes.STRING
-    },
-    status: {
-      type: DataTypes.ENUM('active', 'inactive', 'suspended'),
-      defaultValue: 'active'
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
-    },
-    rating: {
-      type: DataTypes.DECIMAL(3, 2),
-      defaultValue: 0.00,
-      validate: {
-        min: 0,
-        max: 5
-      }
+    {
+      sequelize,
+      modelName: 'Dealer',
+      tableName: 'dealers',
+      timestamps: false,
     }
-  }, {
-    sequelize,
-    modelName: 'Dealer',
-    tableName: 'dealers',
-    timestamps: false
-  });
-  
+  );
+
   return Dealer;
 };
