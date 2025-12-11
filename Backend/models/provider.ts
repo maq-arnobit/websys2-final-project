@@ -1,5 +1,5 @@
 'use strict';
-import { Model,DataTypes,Optional } from 'sequelize';
+const  Model  = require('sequelize');
 
 export default (sequelize: any, DataTypes: any) => {
   class Provider extends Model {
