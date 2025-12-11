@@ -44,6 +44,10 @@ app.use(passport.session());
 
 app.use('/uploads', express.static('uploads'));
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
