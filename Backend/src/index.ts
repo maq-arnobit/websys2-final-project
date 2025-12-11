@@ -45,7 +45,7 @@ app.use(passport.session());
 app.use('/uploads', express.static('uploads'));
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).send('ok');
 });
 
 // API routes
