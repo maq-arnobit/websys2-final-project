@@ -16,7 +16,7 @@ import providerTransportRoutes from './provider-transports/provider-transports-r
 import imageRoutes from './file-upload/images-routes';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { comparePassword } from '../utils/utils';
+import { comparePassword } from './utils/utils';
 import db from '../models'; 
 
 const app = express();
