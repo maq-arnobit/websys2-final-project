@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 const LandingPage = () => {
   const navigate = useNavigate();
   const [typedText, setTypedText] = useState('');
-  const fullText = '> typing message here.';
+  const fullText = '> Reach higher than the skies with our products.';
 
   useEffect(() => {
     let index = 0;
