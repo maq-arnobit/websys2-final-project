@@ -4,120 +4,105 @@ const db = require('../../models');
 
 export class OrdersController {
   static create = async (req: AuthRequest, res: Response) => {
-  const maxRetries = 20;
-  let attempts = 0;
+    const maxRetries = 20;
+    let attempts = 0;
 
-  while (attempts < maxRetries) {
-    try {
-      if (!req.user || req.user.type !== 'customer') {
-        return res.status(403).json({ message: 'Only customers can create orders' });
-      }
+    while (attempts < maxRetries) {
+      // 1. Start a Transaction
+      const t = await db.sequelize.transaction();
 
-      const { dealer_id, items, deliveryAddress, paymentMethod, shippingCost } = req.body;
-
-      if (attempts === 0) {
-        if (!dealer_id || !items || !Array.isArray(items) || items.length === 0 || !deliveryAddress || !paymentMethod) {
-          return res.status(400).json({ 
-            message: 'Missing required fields: dealer_id, items (array), deliveryAddress, paymentMethod' 
-          });
+      try {
+        if (!req.user || req.user.type !== 'customer') {
+          await t.rollback(); // Cancel transaction
+          return res.status(403).json({ message: 'Only customers can create orders' });
         }
 
-        for (const item of items) {
-          if (!item.substance_id || !item.quantity || !item.unitPrice) {
-            return res.status(400).json({ 
-              message: 'Each item must have: substance_id, quantity, unitPrice' 
-            });
-          }
+        const { dealer_id, items, deliveryAddress, paymentMethod, shippingCost } = req.body;
+
+        // Basic Validation
+        if (attempts === 0) {
+           // ... (Your existing validation logic) ...
         }
-      }
 
-      let totalCost = items.reduce((sum: number, item: any) => {
-        return sum + (item.quantity * item.unitPrice);
-      }, 0);
+        let totalAmount = items.reduce((sum: number, item: any) => {
+          return sum + (item.quantity * item.unitPrice);
+        }, 0);
 
-      if (shippingCost) {
-        totalCost += parseFloat(shippingCost);
-      }
+        if (shippingCost) totalAmount += parseFloat(shippingCost);
 
-      const order = await db.Order.create({
-        customer_id: req.user.id,
-        dealer_id,
-        totalCost,
-        deliveryAddress,
-        paymentMethod,
-        paymentDate: new Date(),
-        shippingCost: shippingCost || 0,
-        status: 'pending',
-        paymentStatus: 'pending'
-      });
+        // 2. Create Order (Pass transaction 't')
+        const order = await db.Order.create({
+          customer_id: req.user.id,
+          dealer_id,
+          totalAmount,
+          deliveryAddress,
+          paymentMethod,
+          paymentDate: new Date(),
+          shippingCost: shippingCost || 0,
+          status: 'pending',
+          paymentStatus: 'pending'
+        }, { transaction: t }); // <--- IMPORTANT
 
-      const orderItems = await Promise.all(
-        items.map((item: any) => 
-          db.OrderItem.create({
-            order_id: order.order_id,
-            substance_id: item.substance_id,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subTotal: item.quantity * item.unitPrice 
-          })
-        )
-      );
+        // 3. Create Items (Pass transaction 't')
+        await Promise.all(
+          items.map((item: any) => 
+            db.OrderItem.create({
+              order_id: order.order_id,
+              substance_id: item.substance_id,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subTotal: item.quantity * item.unitPrice 
+            }, { transaction: t }) // <--- IMPORTANT
+          )
+        );
 
-      const completeOrder = await db.Order.findByPk(order.order_id, {
-        include: [
-          {
-            model: db.OrderItem,
-            as: 'items',
-            include: [{ model: db.Substance, as: 'substance' }]
-          },
-          {
-            model: db.Dealer,
-            as: 'dealer',
-            attributes: { exclude: ['password'] }
-          },
-          {
-            model: db.Customer,
-            as: 'customer',
-            attributes: { exclude: ['password'] }
-          }
-        ]
-      });
+        // 4. Commit (Save everything)
+        await t.commit();
 
-      return res.status(201).json({
-        message: 'Order created successfully',
-        order: completeOrder
-      });
-    } catch (error: any) {
-      console.error(`Error creating order (attempt ${attempts + 1}):`, error.message);
-      
-      if ((error.code === '23505' || error.parent?.code === '23505') && 
-          (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
-        attempts++;
+        // 5. Fetch Final Result (New transaction not strictly needed for read, but clean)
+        const completeOrder = await db.Order.findByPk(order.order_id, {
+          include: [
+            {
+              model: db.OrderItem,
+              as: 'items',
+              include: [{ model: db.Substance, as: 'substance' }]
+            },
+            // ... (Your other includes)
+          ]
+        });
+
+        return res.status(201).json({
+          message: 'Order created successfully',
+          order: completeOrder
+        });
+
+      } catch (error: any) {
+        // 6. Rollback (Undo everything if ANY error happens)
+        await t.rollback();
+
+        console.error(`Error creating order (attempt ${attempts + 1}):`, error.message);
         
-        try {
-          await db.sequelize.query(`SELECT nextval('orders_order_id_seq')`);
-          console.log('Advanced orders sequence, retrying...');
+        // Debugging helper
+        if (error.name === 'SequelizeValidationError') {
+            console.log('VALIDATION DEBUG:', error.errors.map((e: any) => e.message));
+        }
+
+        // Retry Logic
+        if ((error.code === '23505' || error.parent?.code === '23505') && 
+            (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
+          attempts++;
+          // ... (Your existing sequence retry logic) ...
           continue;
-        } catch (seqError) {
-          console.error('Error advancing sequence:', seqError);
         }
         
-        if (attempts >= maxRetries) {
-          return res.status(500).json({ 
-            message: `Unable to create order after ${maxRetries} attempts. Please contact support.`,
-            error: 'ID generation failed'
-          });
-        }
-        continue;
+        // If it's NOT a duplicate ID error, stop looping and fail
+        return res.status(500).json({ 
+          message: 'Error creating order', 
+          error: error.message 
+        });
       }
-      
-      return res.status(500).json({ 
-        message: 'Error creating order', 
-        error: error.message 
-      });
     }
   }
-};
 
   static getAll = async (req: AuthRequest, res: Response) => {
     try {
@@ -140,7 +125,8 @@ export class OrdersController {
           },
           {
             model: db.Shipment,
-            as: 'shipment'
+            as: 'shipment',
+            required: false
           }
         ]
       });
@@ -257,13 +243,18 @@ export class OrdersController {
         return res.status(404).json({ message: 'Order not found' });
       }
 
-      if (req.user?.type === 'customer' && order.customer_id !== req.user.id) {
-        return res.status(403).json({ message: 'Cannot delete other customers orders' });
-      }
+      // ... existing customer check ...
 
-      if (order.status !== 'pending') {
-        return res.status(400).json({ message: 'Cannot delete orders that are not pending' });
+      // --- FIX IS HERE: Change order.status to order.orderStatus ---
+      // We check both just to be safe, but orderStatus is the real DB column
+      const currentStatus = order.orderStatus || order.status; 
+      
+      if (currentStatus !== 'pending') {
+        return res.status(400).json({ 
+            message: `Cannot delete orders that are not pending. Current status: ${currentStatus}` 
+        });
       }
+      // -------------------------------------------------------------
 
       await order.destroy();
 

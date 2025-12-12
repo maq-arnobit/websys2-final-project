@@ -8,7 +8,7 @@ const PORT = Number(process.env.PORT) || 4200;
 
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.APP_URL || 'http://localhost:3000',
+  origin: process.env.APP_URL || 'http://localhost:5174',
   credentials: true,
   exposedHeaders: ['set-cookie']
 }));
