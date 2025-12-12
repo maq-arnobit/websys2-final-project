@@ -10,12 +10,14 @@ function ProfileSettings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  // Form State
+  // State to track user type
+  const [userType, setUserType] = useState<'customer' | 'dealer' | 'provider'>('customer');
+
   const [formData, setFormData] = useState({
     id: 0,
     username: '',
     email: '',
-    address: '' 
+    address: '' // Note: Dealers have 'warehouse', Providers don't usually have an address field in your schema, but we'll map it safely.
   });
 
   useEffect(() => {
@@ -27,12 +29,32 @@ function ProfileSettings() {
       const res = await authService.getProfile();
       const user = res.user;
       
-      // Pre-fill form (Fallback to empty string if null)
+      let type: 'customer' | 'dealer' | 'provider' = 'customer';
+      let id = 0;
+      let address = '';
+
+      // Detect Type & Map Fields
+      if (user.customer_id) {
+        type = 'customer';
+        id = user.customer_id;
+        address = user.address;
+      } else if (user.dealer_id) {
+        type = 'dealer';
+        id = user.dealer_id;
+        address = user.warehouse; // Map warehouse to address field for dealers
+      } else if (user.provider_id) {
+        type = 'provider';
+        id = user.provider_id;
+        address = ''; // Providers don't have an address/warehouse column in your schema
+      }
+
+      setUserType(type);
+
       setFormData({
-        id: user.customer_id || user.id,
+        id: id,
         username: user.username || '',
         email: user.email || '',
-        address: user.address || ''
+        address: address || ''
       });
       setLoading(false);
     } catch (err: any) {
@@ -51,13 +73,20 @@ function ProfileSettings() {
     setSuccess('');
     
     try {
-      // Only send Email and Address
-      const payload = {
-        email: formData.email,
-        address: formData.address
+      // Prepare payload based on type
+      const payload: any = {
+        email: formData.email
       };
 
-      await dataService.updateCustomerProfile(formData.id, payload);
+      // Only send address if it's relevant (Customer=Address, Dealer=Warehouse)
+      if (userType === 'customer') {
+        payload.address = formData.address;
+      } else if (userType === 'dealer') {
+        payload.warehouse = formData.address; // Send as warehouse
+      } 
+      // Providers only update email (based on schema)
+
+      await dataService.updateProfile(userType, formData.id, payload);
       setSuccess('Profile updated successfully.');
     } catch (err: any) {
       setError(err.message);
@@ -70,14 +99,13 @@ function ProfileSettings() {
     <div className="min-h-screen bg-black text-white font-mono p-6">
       <div className="max-w-2xl mx-auto">
         
-        {/* Header */}
         <button onClick={() => navigate('/home')} className="flex items-center text-green-500 mb-6 hover:text-green-400 transition-colors">
           <ArrowLeft size={16} className="mr-2" /> RETURN_TO_DASHBOARD
         </button>
 
         <div className="border-2 border-green-500 p-8 shadow-[0_0_15px_rgba(0,255,0,0.2)] bg-black">
           <h1 className="text-2xl font-bold text-green-500 mb-6 flex items-center gap-2">
-             &gt; EDIT_PROFILE_CONFIG
+             &gt; EDIT_PROFILE_CONFIG [{userType.toUpperCase()}]
           </h1>
 
           {error && <div className="bg-red-900/20 border border-red-500 text-red-500 p-3 mb-4 text-sm">{error}</div>}
@@ -85,7 +113,7 @@ function ProfileSettings() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Username (Read Only) */}
+            {/* Username */}
             <div>
               <label className="block text-green-700 text-sm mb-1">USERNAME [LOCKED]</label>
               <div className="flex items-center border border-gray-800 bg-gray-900 p-2 text-gray-500">
@@ -109,20 +137,24 @@ function ProfileSettings() {
               </div>
             </div>
 
-            {/* Address */}
-            <div>
-              <label className="block text-green-500 text-sm mb-1">DEFAULT_ADDRESS</label>
-              <div className="flex items-start border border-green-800 focus-within:border-green-500 bg-black p-2 transition-colors">
-                <MapPin size={16} className="mr-2 mt-1 text-green-700" />
-                <textarea 
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  rows={3}
-                  className="bg-transparent border-none outline-none w-full text-white placeholder-gray-700 resize-none"
-                />
+            {/* Address / Warehouse (Hidden for Providers) */}
+            {userType !== 'provider' && (
+              <div>
+                <label className="block text-green-500 text-sm mb-1">
+                    {userType === 'dealer' ? 'WAREHOUSE_LOCATION' : 'DELIVERY_ADDRESS'}
+                </label>
+                <div className="flex items-start border border-green-800 focus-within:border-green-500 bg-black p-2 transition-colors">
+                  <MapPin size={16} className="mr-2 mt-1 text-green-700" />
+                  <textarea 
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    rows={3}
+                    className="bg-transparent border-none outline-none w-full text-white placeholder-gray-700 resize-none"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <button 
               type="submit" 

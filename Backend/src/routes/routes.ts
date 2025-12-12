@@ -9,6 +9,7 @@ import { ProviderTransportsController } from '../provider-transports/provider-tr
 import { PurchaseOrdersController } from '../purchase-orders/purchase-orders-controller';
 import { InventoryController } from '../inventory/inventory-controller';
 import { OrdersController } from '../orders/orders-controller';
+import { ShipmentsController } from '../shipments/shipments-controller';
 
 
 const router = Router();
@@ -52,6 +53,9 @@ router.get('/substances', authenticate(), SubstancesController.getAll);
 router.get('/substances/:id', authenticate(), SubstancesController.getById);
 router.put('/substances/:id', authenticate(['provider']), SubstancesController.update);
 router.delete('/substances/:id', authenticate(['provider']), SubstancesController.delete);
+
+//shipment routes
+router.post('/shipments', authenticate(['dealer']), ShipmentsController.create);
 
 // Provider Transport Routes 
 router.post('/provider-transports', authenticate(['provider']), ProviderTransportsController.create);

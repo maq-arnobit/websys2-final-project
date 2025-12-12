@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { authService } from '../services/authService';
 import { dataService } from '../services/dataService';
-import { Package, TrendingUp, Users, Settings, Activity, ShoppingCart, Truck, Eye, XCircle } from 'lucide-react';
+import { Package, Plus, TrendingUp, Users, Settings, Activity, ShoppingCart, Truck, Eye, XCircle } from 'lucide-react';
+import AddInventoryModal from '../components/AddInventoryModal';
+import AddSubstanceModal from '../components/AddSubstanceModal';
 
 interface UserProfile {
   customer_id?: number;
@@ -22,6 +24,8 @@ function Dashboard() {
   const [userType, setUserType] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAddInventory, setShowAddInventory] = useState(false);
+  const [showAddSubstance, setShowAddSubstance] = useState(false);
 
   // Data State
   const [orders, setOrders] = useState<any[]>([]);
@@ -328,6 +332,12 @@ function Dashboard() {
                     <Package className="text-green-500" />
                     <h3 className="text-lg font-bold text-green-500">INVENTORY_STATUS</h3>
                   </div>
+                  <button 
+                      onClick={() => setShowAddInventory(true)}
+                      className="flex items-center gap-1 text-xs bg-green-900/30 text-green-500 border border-green-500 px-2 py-1 hover:bg-green-500 hover:text-black transition-colors"
+                  >
+                      <Plus size={14} /> ADD_ITEM
+                  </button>
                   {inventory.length === 0 ? (
                     <p className="text-gray-500 text-sm">Inventory empty.</p>
                   ) : (
@@ -355,7 +365,11 @@ function Dashboard() {
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {orders.map((order) => (
-                        <div key={order.order_id} className="border border-gray-800 p-2 flex justify-between items-center">
+                        <div 
+                          key={order.order_id} 
+
+                          onClick={() => navigate(`/orders/${order.order_id}`)}
+                          className="border border-gray-800 p-2 flex justify-between items-center cursor-pointer hover:bg-green-900/20 hover:border-green-500 transition-all">
                           <div>
                             <p className="text-xs text-green-700">ORDER #{order.order_id}</p>
                             <p className="text-sm text-gray-400">{new Date(order.orderDate).toLocaleDateString()}</p>
@@ -387,6 +401,12 @@ function Dashboard() {
                     <Activity className="text-green-500" />
                     <h3 className="text-lg font-bold text-green-500">ACTIVE_SUBSTANCES</h3>
                   </div>
+                  <button 
+                      onClick={() => setShowAddSubstance(true)}
+                      className="flex items-center gap-1 text-xs bg-green-900/30 text-green-500 border border-green-500 px-2 py-1 hover:bg-green-500 hover:text-black transition-colors"
+                  >
+                      <Plus size={14} /> NEW_COMPOUND
+                  </button>
                   {substances.length === 0 ? (
                     <p className="text-gray-500 text-sm">No substances listed.</p>
                   ) : (
@@ -443,6 +463,26 @@ function Dashboard() {
           </div>
         </footer>
       </div>
+
+      {showAddInventory && (
+          <AddInventoryModal 
+              onClose={() => setShowAddInventory(false)} 
+              onSuccess={() => {
+                  alert("Inventory updated successfully.");
+                  loadProfileAndData(); // Refresh dashboard
+              }} 
+          />
+      )}
+
+      {showAddSubstance && (
+          <AddSubstanceModal 
+              onClose={() => setShowAddSubstance(false)} 
+              onSuccess={() => {
+                  loadProfileAndData(); // Refresh list
+              }} 
+          />
+      )}
+
     </div>
   );
 }

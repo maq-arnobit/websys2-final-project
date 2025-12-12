@@ -65,10 +65,11 @@ export const dataService = {
       throw new Error(error.response?.data?.message || 'Failed to cancel order');
     }
   },
-  // --- Profile Management ---
-  updateCustomerProfile: async (id: number, data: any) => {
+  updateProfile: async (userType: 'customer' | 'dealer' | 'provider', id: number, data: any) => {
     try {
-      const response = await axios.put(`${API_URL}/api/customers/${id}`, data, axiosConfig);
+      // Dynamically choose the endpoint based on user type (pluralized)
+      const endpoint = `${API_URL}/api/${userType}s/${id}`;
+      const response = await axios.put(endpoint, data, axiosConfig);
       return response.data;
     } catch (error: any) {
       console.error('Error updating profile:', error);
@@ -96,6 +97,42 @@ export const dataService = {
       throw error;
     }
   },
+  // --- Fulfillment ---
+  shipOrder: async (orderId: number, carrier: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/shipments`, {
+        order_id: orderId,
+        carrier: carrier
+      }, axiosConfig);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error shipping order:', error);
+      throw new Error(error.response?.data?.message || 'Failed to ship order');
+    }
+  },
+  // --- Substance & Inventory Management ---
+  getAllSubstances: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/substances`, axiosConfig);
+      return response.data.substances;
+    } catch (error) {
+      console.error('Error fetching substances:', error);
+      throw error;
+    }
+  },
+
+  addInventoryItem: async (substanceId: number, quantity: number) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/inventory`, {
+        substance_id: substanceId,
+        quantity: quantity
+      }, axiosConfig);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error adding inventory:', error);
+      throw new Error(error.response?.data?.message || 'Failed to add inventory');
+    }
+  },
 
   // --- Provider Endpoints ---
   getProviderSubstances: async (id: number) => {
@@ -117,6 +154,14 @@ export const dataService = {
       throw error;
     }
   },
-
+  createSubstance: async (data: any) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/substances`, data, axiosConfig);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating substance:', error);
+      throw new Error(error.response?.data?.message || 'Failed to create substance');
+    }
+  },
   
 };

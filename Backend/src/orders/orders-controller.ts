@@ -24,6 +24,32 @@ export class OrdersController {
            // ... (Your existing validation logic) ...
         }
 
+        // 1. Check and Update Inventory (Decrement Stock)
+        for (const item of items) {
+          const inventoryItem = await db.Inventory.findOne({
+            where: {
+              dealer_id: dealer_id,
+              substance_id: item.substance_id
+            },
+            transaction: t, // Important: Lock this row
+            lock: true      // Prevent race conditions
+          });
+
+          if (!inventoryItem) {
+            throw new Error(`Item (Substance ID: ${item.substance_id}) is not available in this dealer's inventory.`);
+          }
+
+          if (inventoryItem.quantityAvailable < item.quantity) {
+             throw new Error(`Insufficient stock for Substance ID ${item.substance_id}. Available: ${inventoryItem.quantityAvailable}, Requested: ${item.quantity}`);
+          }
+
+          // Subtract the quantity
+          await inventoryItem.decrement('quantityAvailable', { 
+            by: item.quantity,
+            transaction: t 
+          });
+        }
+
         let totalAmount = items.reduce((sum: number, item: any) => {
           return sum + (item.quantity * item.unitPrice);
         }, 0);
@@ -242,11 +268,6 @@ export class OrdersController {
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-
-      // ... existing customer check ...
-
-      // --- FIX IS HERE: Change order.status to order.orderStatus ---
-      // We check both just to be safe, but orderStatus is the real DB column
       const currentStatus = order.orderStatus || order.status; 
       
       if (currentStatus !== 'pending') {
@@ -254,11 +275,31 @@ export class OrdersController {
             message: `Cannot delete orders that are not pending. Current status: ${currentStatus}` 
         });
       }
-      // -------------------------------------------------------------
+      const orderItems = await db.OrderItem.findAll({ where: { order_id: id } });
+      
+      // Use a transaction for safety
+      await db.sequelize.transaction(async (t: any) => {
+          for (const item of orderItems) {
+              const inventory = await db.Inventory.findOne({
+                  where: { 
+                      dealer_id: order.dealer_id,
+                      substance_id: item.substance_id
+                  },
+                  transaction: t
+              });
+              
+              if (inventory) {
+                  await inventory.increment('quantityAvailable', { 
+                      by: item.quantity,
+                      transaction: t 
+                  });
+              }
+          }
+          // Delete the order after restoring stock
+          await order.destroy({ transaction: t });
+      });
 
-      await order.destroy();
-
-      return res.status(200).json({ message: 'Order deleted successfully' });
+      return res.status(200).json({ message: 'Order deleted and inventory restored' });
     } catch (error: any) {
       return res.status(500).json({ 
         message: 'Error deleting order', 

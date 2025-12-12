@@ -1,32 +1,54 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Truck, ArrowLeft, Package, DollarSign, MapPin } from 'lucide-react';
-import { dataService } from '../services/dataService'; // <--- IMPORT THIS
+import { Box, Truck, ArrowLeft, Package, DollarSign, MapPin } from 'lucide-react';
+import { dataService } from '../services/dataService';
+import { authService } from '../services/authService'; // Import authService
 
 function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
+  const [user, setUser] = useState<any>(null); // State for current user
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchOrder = async () => {
+    const loadData = async () => {
       if (!id) return;
       
       try {
-        // --- FIXED: Use dataService to hit the correct backend port ---
-        const data = await dataService.getOrderById(id);
-        setOrder(data);
+        // 1. Fetch User Profile (to check if Dealer)
+        const userRes = await authService.getProfile();
+        setUser(userRes.user);
+
+        // 2. Fetch Order Details
+        const orderData = await dataService.getOrderById(id);
+        setOrder(orderData);
       } catch (err: any) {
         console.error(err);
-        setError(err.message || "Failed to load order details");
+        setError(err.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-    fetchOrder();
+    loadData();
   }, [id]);
+
+  const handleShipOrder = async () => {
+    if (!window.confirm("CONFIRM: Mark this order as shipped?")) return;
+    
+    try {
+        // Call backend to ship
+        await dataService.shipOrder(order.order_id, "FedEx-Express"); 
+        alert("Order status updated: SHIPPED");
+        
+        // Refresh data to show new status
+        const updatedOrder = await dataService.getOrderById(id!);
+        setOrder(updatedOrder);
+    } catch (err: any) {
+        alert("Error: " + err.message);
+    }
+  };
 
   if (loading) return <div className="p-10 bg-black text-green-500 font-mono">LOADING...</div>;
   
@@ -42,6 +64,10 @@ function OrderDetails() {
 
   if (!order) return <div className="p-10 bg-black text-red-500 font-mono">ORDER NOT FOUND</div>;
 
+  // Logic to determine if Dealer Controls should be shown
+  const isDealerForThisOrder = user?.dealer_id && user.dealer_id === order.dealer_id;
+  const isPending = order.status === 'pending' || order.orderStatus === 'pending' || order.orderStatus === 'processing';
+
   return (
     <div className="min-h-screen bg-black text-white font-mono p-6">
       <button onClick={() => navigate('/home')} className="flex items-center text-green-500 mb-6 hover:text-green-400">
@@ -54,8 +80,23 @@ function OrderDetails() {
             <h1 className="text-2xl font-bold text-green-500">ORDER #{order.order_id}</h1>
             <p className="text-gray-400 text-sm">Placed on: {new Date(order.orderDate || order.createdAt).toLocaleString()}</p>
           </div>
-          <div className={`px-3 py-1 border ${order.status === 'delivered' ? 'border-green-500 text-green-500' : 'border-yellow-500 text-yellow-500'}`}>
-            {order.status?.toUpperCase() || order.orderStatus?.toUpperCase()}
+          
+          <div className="text-right">
+            <div className={`px-3 py-1 border inline-block mb-2 ${order.status === 'shipped' || order.orderStatus === 'shipped' || order.status === 'delivered' || order.orderStatus === 'delivered' ? 'border-green-500 text-green-500' : 'border-yellow-500 text-yellow-500'}`}>
+              {(order.status || order.orderStatus).toUpperCase()}
+            </div>
+            
+            {/* DEALER ACTION BUTTON */}
+            {isDealerForThisOrder && isPending && (
+                 <div className="mt-2">
+                     <button 
+                        onClick={handleShipOrder}
+                        className="bg-green-600 text-black font-bold px-4 py-2 hover:bg-green-500 transition-colors flex items-center gap-2"
+                     >
+                        <Box size={16} /> SHIP_ORDER
+                     </button>
+                 </div>
+             )}
           </div>
         </div>
 
@@ -63,7 +104,16 @@ function OrderDetails() {
           <div>
             <h3 className="text-green-500 font-bold flex items-center gap-2 mb-2"><MapPin size={16}/> SHIPPING INFO</h3>
             <p className="text-gray-300">{order.deliveryAddress}</p>
-            <p className="text-gray-400 text-sm mt-1">Method: {order.shipment?.shipmentMethod || 'Standard Delivery'}</p>
+            <p className="text-gray-400 text-sm mt-1">Method: Standard Delivery</p>
+
+            {/* Display Shipment Tracking Info if available */}
+            {order.shipment && (
+                <div className="mt-4 border border-green-900 bg-green-900/10 p-3 text-sm">
+                    <p className="text-green-400 font-bold mb-1">TRACKING ACTIVE</p>
+                    <p className="text-gray-400">Carrier: <span className="text-white">{order.shipment.carrier}</span></p>
+                    <p className="text-gray-400">Status: <span className="text-white">{order.shipment.status.toUpperCase()}</span></p>
+                </div>
+            )}
           </div>
           <div className="text-right">
              <h3 className="text-green-500 font-bold flex items-center justify-end gap-2 mb-2"><DollarSign size={16}/> PAYMENT</h3>

@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth-middleware';
 const db = require('../../models');
 
 export class InventoryController {
+  // Backend/src/inventory/inventory-controller.ts
+
   static create = async (req: AuthRequest, res: Response) => {
     const maxRetries = 20;
     let attempts = 0;
@@ -23,6 +25,7 @@ export class InventoryController {
           }
         }
 
+        // 1. Check if item already exists
         const existingInventory = await db.Inventory.findOne({
           where: {
             dealer_id: req.user.id,
@@ -30,16 +33,36 @@ export class InventoryController {
           }
         });
 
+        // 2. SMART RESTOCKING LOGIC
         if (existingInventory) {
-          return res.status(400).json({ 
-            message: 'Inventory item already exists for this substance. Use update instead.' 
+          // If it exists, just add the new quantity to the old one
+          await existingInventory.increment('quantityAvailable', { by: quantity });
+          
+          // Fetch updated record for response
+          await existingInventory.reload({
+             include: [{
+                model: db.Substance,
+                as: 'substance',
+                include: [{ 
+                  model: db.Provider, 
+                  as: 'provider', 
+                  attributes: { exclude: ['password'] } 
+                }]
+              }]
+          });
+
+          return res.status(200).json({ 
+            message: 'Inventory restocked successfully', 
+            inventory: existingInventory 
           });
         }
 
+        // 3. If not exists, CREATE NEW
+        // (Note: We map input 'quantity' to DB column 'quantityAvailable')
         const inventory = await db.Inventory.create({
           dealer_id: req.user.id,
           substance_id,
-          quantity,
+          quantityAvailable: quantity, 
           reorderLevel: reorderLevel || 0
         });
 
@@ -59,32 +82,26 @@ export class InventoryController {
           message: 'Inventory item created successfully',
           inventory: inventoryWithDetails
         });
+
       } catch (error: any) {
         console.error(`Error creating inventory (attempt ${attempts + 1}):`, error.message);
         
+        // Retry logic for unique constraints (only relevant for new inserts)
         if ((error.code === '23505' || error.parent?.code === '23505') && 
             (error.constraint?.includes('_pkey') || error.parent?.constraint?.includes('_pkey'))) {
           attempts++;
-          
           try {
             await db.sequelize.query(`SELECT nextval('inventories_inventory_id_seq')`);
-            console.log('Advanced inventories sequence, retrying...');
             continue;
           } catch (seqError) {
             console.error('Error advancing sequence:', seqError);
           }
-          
-          if (attempts >= maxRetries) {
-            return res.status(500).json({ 
-              message: `Unable to create inventory after ${maxRetries} attempts. Please contact support.`,
-              error: 'ID generation failed'
-            });
-          }
+          if (attempts >= maxRetries) return res.status(500).json({ error: 'ID generation failed' });
           continue;
         }
         
         return res.status(500).json({ 
-          message: 'Error creating inventory item', 
+          message: 'Error creating/updating inventory', 
           error: error.message 
         });
       }
