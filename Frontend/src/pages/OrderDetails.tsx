@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Box, Truck, ArrowLeft, Package, DollarSign, MapPin } from 'lucide-react';
+import { Box, ArrowLeft, Package, DollarSign, MapPin } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { authService } from '../services/authService'; // Import authService
 

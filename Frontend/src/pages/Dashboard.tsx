@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { authService } from '../services/authService';
 import { dataService } from '../services/dataService';
-import { Package, Plus, TrendingUp, Users, Settings, Activity, ShoppingCart, Truck, Eye, XCircle } from 'lucide-react';
+import { Package, Plus, Activity, ShoppingCart, Truck, Eye, XCircle } from 'lucide-react';
 import AddInventoryModal from '../components/AddInventoryModal';
 import AddSubstanceModal from '../components/AddSubstanceModal';
 

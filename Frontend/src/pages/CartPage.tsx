@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Trash2, CreditCard, MapPin, CheckCircle, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Trash2, CreditCard, MapPin, ArrowRight, ShoppingBag } from 'lucide-react';
 import { dataService } from '../services/dataService';
 
 export default function CartPage() {

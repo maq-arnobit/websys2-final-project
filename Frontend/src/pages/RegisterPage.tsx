@@ -293,7 +293,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full terminal-border bg-black p-3 text-green-500 font-bold hover:bg-green-500 hover:bg-opacity-10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '&gt; CREATING_ACCOUNT...' : '&gt; INITIALIZE_ACCOUNT'}
+              {loading ? '> CREATING_ACCOUNT...' : '> INITIALIZE_ACCOUNT'}
             </button>
           </form>
 
