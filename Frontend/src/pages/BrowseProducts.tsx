@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { dataService } from '../services/dataService';
-import { ShoppingCart, Package, Truck, Plus } from 'lucide-react';
+import { ShoppingCart, Plus } from 'lucide-react';
 
 interface Substance {
   substance_id: number;
